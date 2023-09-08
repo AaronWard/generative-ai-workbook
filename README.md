@@ -8,7 +8,7 @@ Repository for this udemy course work: [Link](https://www.udemy.com/course/learn
 - **Project 2**: Develop an engaging conversational bot using LangChain and OpenAI to deliver an interactive user experience.
 - **Project 3**: Create an AI-powered app tailored for children, facilitating the discovery of related classes of objects and fostering educational growth.
 - **Project 4**: Build a captivating marketing campaign app that utilizes the persuasive potential of well-crafted sales copy, boosting sales and brand reach.
-- **Project 5**: Develop a ChatGPT clone with an added summarization feature, delivering a versatile and invaluable chatbot experience.
+- **Project 5**: Develop a ChatGPT clone with an added summarization feature, delivering a unique experience.
 - **Project 6**: MCQ Quiz Creator App - Seamlessly create multiple-choice quizzes for your students using LangChain and Pinecone.
 - **Project 7:** CSV Data Analysis Toll - Helps you analyze your CSV file by answering your queries about its data.
 - **Project 8**: Youtube Script Writing Tool -  Effortlessly create compelling YouTube scripts with this user-friendly and efficient script-writing tool.

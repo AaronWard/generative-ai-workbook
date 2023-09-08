@@ -2,8 +2,6 @@
 Repository for this udemy course work: [Link](https://www.udemy.com/course/learn-langchain-go-from-zero-to-hero-build-ai-apps/)
 
 
-
-
 ## Projects
 
 - **Project 1:** Construct a dynamic question-answering application with the unparalleled capabilities of LangChain, OpenAI, and Hugging Face Spaces.

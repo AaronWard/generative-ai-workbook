@@ -58,8 +58,6 @@ with container:
         user_input = st.text_area("Your question goes here:", key='input', height=100)
         submit_button = st.form_submit_button(label='Send')
 
-        # summarise_button = st.sidebar.button("Summarise the conversation", key="summarise")
-
         if summarise_button:
             if st.session_state['API_Key'] == '':
                 summarise_placeholder = st.sidebar.write("First provide an OpenAI Key❌")

@@ -11,3 +11,4 @@ matplotlib
 plotly
 scipy
 scikit-learn
+streamlit_chat

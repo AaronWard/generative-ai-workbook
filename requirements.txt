@@ -7,3 +7,7 @@ pandas
 numpy 
 streamlit
 langchain
+matplotlib
+plotly
+scipy
+scikit-learn

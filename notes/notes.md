@@ -38,6 +38,13 @@ Free cloud based containers for LLMs and ML web apps.
 </center>
 
 
+### Text Emeddings
+
+- Embeddings are a way to represent words in a lower dimensional space, Allowing similar words to have similar representaiton. This facilitates semantic simarity search.
+
+<center>
+<img src="../resources/img/embeddings1.png" style=""; display: block; margin-right: auto; margin-left: auto;">
+</center>
 
 ### Lanchain Modules
 

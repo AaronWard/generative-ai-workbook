@@ -46,6 +46,14 @@ Free cloud based containers for LLMs and ML web apps.
 <img src="../resources/img/embeddings1.png" style=""; display: block; margin-right: auto; margin-left: auto;">
 </center>
 
+
+### Streamlit
+
+```bash
+> cd to project folder
+streamlit run app.py
+```
+
 ### Lanchain Modules
 
 - Models: 

@@ -46,12 +46,9 @@ def getresponse(userInput, api_key):
     print(st.session_state['conversation'].memory.buffer)
     return response
 
-
-
 response_container = st.container()
 # Here we will have a container for user input text box
 container = st.container()
-
 
 with container:
     with st.form(key='my_form', clear_on_submit=True):

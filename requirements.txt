@@ -12,3 +12,8 @@ plotly
 scipy
 scikit-learn
 streamlit_chat
+chromadb 
+sentence_transformers
+unstructured
+pinecone-client
+pypdf

@@ -2,8 +2,6 @@
 #Once you have Streamlit installed, you can import it into your Python script using the import statement,
 
 import streamlit as st
-
-
 from langchain.llms import OpenAI
 
 #Function to return the response
@@ -30,8 +28,6 @@ submit = st.button('Generate')
 
 #If generate button is clicked
 if submit:
-
     st.subheader("Answer:")
-
     st.write(response)
 

@@ -1,0 +1,71 @@
+> Entering new AgentExecutor chain...
+
+Thought: To answer this question effectively, I need to first understand the problem and plan out a strategy for solving it.
+Action: [No action]
+Action Input: [No action input]
+Observation: [No action] is not a valid tool, try one of [python_repl_ast].
+Thought: I need to use the given data dictionary and project phases to come up with a strategy.
+Action: [No action]
+Action Input: [No action input]
+Observation: [No action] is not a valid tool, try one of [python_repl_ast].
+Thought: To start, I need to determine what data I need and how I will collect it.
+Action: [No action]
+Action Input: [No action input]
+Observation: [No action] is not a valid tool, try one of [python_repl_ast].
+Thought: Using the data dictionary, I can see that I need the PATIENT_ID, STATE FIPS, DIAGNOSED_COVID, DIAGNOSES_DATE, CURRENT_AGE, and AGE_AT_DIAGNOSIS data points.
+Action: [No action]
+Action Input: [No action input]
+Observation: [No action] is not a valid tool, try one of [python_repl_ast].
+Thought: Next, I will need to use python and pandas to gather the data and prepare it for analysis.
+Action: python_repl_ast
+Action Input: df.info()
+Observation: <class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1000 entries, 0 to 999
+Data columns (total 8 columns):
+ #   Column            Non-Null Count  Dtype  
+---  ------            --------------  -----  
+ 0   Unnamed: 0        1000 non-null   int64  
+ 1   PATIENT_ID        1000 non-null   object 
+ 2   STATE             1000 non-null   object 
+ 3   FIPS              1000 non-null   int64  
+ 4   DIAGNOSED_COVID   1000 non-null   int64  
+ 5   DIAGNOSES_DATE    492 non-null    object 
+ 6   CURRENT_AGE       1000 non-null   int64  
+ 7   AGE_AT_DIAGNOSIS  492 non-null    float64
+dtypes: float64(1), int64(4), object(3)
+memory usage: 62.6+ KB
+
+Thought: Now I have confirmed that I have all the data points I need.
+Action: python_repl_ast
+Action Input: df.groupby("DIAGNOSED_COVID")["CURRENT_AGE"].mean()
+Observation: DIAGNOSED_COVID
+0    49.098425
+1    47.975610
+Name: CURRENT_AGE, dtype: float64
+Thought: I have the mean age of people who have been and haven't been diagnosed. Now I need to plot this to an image and save it to the working directory.
+Action: python_repl_ast
+Action Input: df.groupby("DIAGNOSED_COVID")["CURRENT_AGE"].mean().plot(kind="bar")
+Observation: Axes(0.125,0.11;0.775x0.77)
+Thought: Now I need to save this image to the working directory.
+Action: python_repl_ast
+Action Input: plt.savefig("average_age.png")
+Observation: NameError: name 'plt' is not defined
+Thought: Oh, I need to add a plt before saving the figure.
+Action: python_repl_ast
+Action Input: import matplotlib.pyplot as plt
+Observation: 
+Thought: Now I'll save the figure.
+Action: python_repl_ast
+Action Input: plt.savefig("average_age.png")
+Observation: 
+Thought: I have achieved my goal, the image I saved should contain the average age of people who have been and haven't been diagnosed with COVID-19.
+Final Answer: I have achieved my goal, the image I saved to the working directory should contain the average age of people who have been and haven't been diagnosed with COVID-19.
+
+> Finished chain.
+
+
+# I kind needed to remind it to plot the image a few times with this, i had to be more explicit by saying
+# "plot to an image". Maybe for user experience, you could automate this with a button
+# and that would inject an explicit outline for plotting with this given task. 
+# Nice to see it quickly recovered from whatever spasm it was having at the start with
+# the actions not working. 

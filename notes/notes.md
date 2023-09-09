@@ -54,7 +54,14 @@ Free cloud based containers for LLMs and ML web apps.
 streamlit run app.py
 ```
 
+
+
+
 ### Lanchain Modules
 
 - Models: 
 - Chains:
+- Agents Module:
+    - [https://python.langchain.com/docs/modules/agents/](https://python.langchain.com/docs/modules/agents/)
+    - Action Agent: recieves input from user, decides which tool and tool input (if any). It then calls the tool and records the output (known as the observation), It decides whichs next steps to use given the context of the history of tools, tool inputs, observations. Repeat the previous two steps until it can respond to the user. 
+    - Plan and Execute Agents: Recieves input from user, plans a full sequence of steps and then executes them. Executing the steps in order, passing the output each step as input into the next.

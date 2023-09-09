@@ -17,3 +17,5 @@ sentence_transformers
 unstructured
 pinecone-client
 pypdf
+duckduckgo-search
+autopep8

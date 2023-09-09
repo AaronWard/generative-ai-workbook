@@ -1,0 +1,98 @@
+> Entering new LLMChain chain...
+Prompt after formatting:
+Please come up with a title for a YouTube video on the  History. 
+            Here is some text for additional context to base your answer on, but you are not
+            limited to using what's in this text for your response: 
+
+            A Comprehensive Review of Irish History: From Ancient Times to the Present Day
+Introduction
+Ireland'
+
+# I needed truncate to the first few characters for the duck duck
+# go search, which explains the add_context() function for dynamically
+# cutting off the size of the additional document. 
+
+> Finished chain.
+
+
+> Entering new LLMChain chain...
+Prompt after formatting:
+Create a script for a YouTube video based on this title for me. TITLE: s Rich Tapestry: Unraveling the Layers of Irish History of duration: 4 minutes using this search data World History Subcategories. Nature isn't always peaceful and idyllic. Earthquakes, tsunamis, hurricanes, and other powerful natural phenomena can have devastating consequences on communities and regions throughout the world. But nature is far from the only instigator of large-scale misfortune; human-made disasters and tragedies, both ... History (derived from Ancient Greek ἱστορία (historía) 'inquiry; knowledge acquired by investigation') [1] is the systematic study and documentation of the human past. [2] [3] The period of events before the invention of writing systems is considered prehistory. [4] ". History" is an umbrella term comprising past events as well as the ... history, discipline that studies the chronological record of events, usually attempting, on the basis of a critical examination of source materials, to explain events.. For the principal treatment of the writing of history, and the scholarly research associated with it, see historiography.There are many branches of the study of history, among them world history, intellectual history, social ... Our 9 best-selling history titles feature in-depth storytelling and iconic imagery to engage and inform on the people, the wars, and the events that shaped America and the world. subscribe today. Facebook; Twitter; Instagram; YouTube "History is a guide to navigation in perilous times. History is who we are and why we are the way we are." Discover captivating world history news and fascinating stories from around the globe on Smithsonian Magazine's World History category.. 
+            Here is some text for additional context to base your answer on, but you are not
+            limited to using what's in this text for your response: 
+
+            A Comprehensive Review of Irish History: From Ancient Times to the Present Day
+Introduction
+Ireland's history is a rich and complex narrative spanning thousands of years. Its story involves cultural assimilation, foreign invasions, religious revolutions, and struggles for independence. This comprehensive review will take you through the significant milestones in Irish history, breaking down each period with expanded content and a chronological context.
+
+Prehistoric Ireland (c. 8000-500 BCE)
+The first humans to arrive in Ireland came around 8000 BCE, during the Mesolithic period. They were hunter-gatherers who lived off the abundant fish and game that the island offered. Ireland's most famous prehistoric monument, Newgrange, dates back to around 3200 BCE. This passage tomb is renowned for its winter solstice phenomenon, where the inner chamber is illuminated by the rising sun, revealing intricate Neolithic art.
+
+Celtic Ireland (500 BCE - 400 CE)
+Around 500 BCE, the Celts began to arrive in Ireland, bringing their language, traditions, and iron-working technology. These Celtic tribes were organized into a system of petty kingdoms, or "tuatha," which had their own rulers and were often at war with each other. The druidic religion of the Celts involved nature worship, and their art and craftsmanship, especially in metalwork, were advanced.
+
+Christianization and Early Medieval Period (400 - 800 CE)
+St. Patrick is traditionally credited with bringing Christianity to Ireland in the 5th century CE. Monasticism flourished in Ireland, and monasteries like Clonmacnoise became centers of learning and manuscript illumination. The Book of Kells, produced around 800 CE, is one of the most exquisite examples of Insular art, blending Christian and Celtic motifs.
+
+Viking Invasions (800 - 1014 CE)
+Starting from the late 8th century, Norse Vikings began to raid Irish monasteries and settlements. By the 9th century, they had established fortified coastal towns like Dublin and Waterford. The Vikings were initially viewed as pagans and plunderers but eventually became part of the Irish socio-political landscape. The Battle of Clontarf in 1014 saw the Irish led by High King Brian Boru defeat the Vikings, although Boru himself was killed.
+
+Anglo-Norman Period (1169 - 1541 CE)
+The Anglo-Norman invasion began in 1169 when Richard de Clare, also known as Strongbow, landed in Ireland. King Henry II of England later arrived, bringing significant territories under English control. The Anglo-Normans introduced feudalism and were instrumental in the spread of Roman Catholicism. Over time, they became integrated with the Irish, leading to a hybrid culture.
+
+Tudor Conquest and Plantations (1541 - 1607 CE)
+During the 16th century, the Tudor monarchs sought to extend English rule over the whole of Ireland. This led to the Nine Years' War (1594-1603), which ended in the defeat of the Irish chieftains. The subsequent English "plantations" involved confiscating land from the Irish and 
+            
+
+> Finished chain.
+/Users/award40/anaconda3/envs/masterclass/lib/python3.9/site-packages/langchain/llms/openai.py:200: UserWarning: You are trying to use a chat model. This way of initializing it is no longer supported. Instead, please use: `from langchain.chat_models import ChatOpenAI`
+  warnings.warn(
+/Users/award40/anaconda3/envs/masterclass/lib/python3.9/site-packages/langchain/llms/openai.py:787: UserWarning: You are trying to use a chat model. This way of initializing it is no longer supported. Instead, please use: `from langchain.chat_models import ChatOpenAI`
+  warnings.warn(
+
+
+> Entering new LLMChain chain...
+Prompt after formatting:
+Please come up with a title for a YouTube video on the  History. 
+            Here is some text for additional context to base your answer on, but you are not
+            limited to using what's in this text for your response: 
+
+            A Comprehensive Review of Irish History: From Ancient Times to the Present Day
+Introduction
+Ireland'
+            
+
+> Finished chain.
+
+
+> Entering new LLMChain chain...
+Prompt after formatting:
+Create a script for a YouTube video based on this title for me. TITLE: s Journey Through Time: Unraveling the Rich Tapestry of Irish History of duration: 3 minutes using this search data World History Subcategories. Nature isn't always peaceful and idyllic. Earthquakes, tsunamis, hurricanes, and other powerful natural phenomena can have devastating consequences on communities and regions throughout the world. But nature is far from the only instigator of large-scale misfortune; human-made disasters and tragedies, both ... History (derived from Ancient Greek ἱστορία (historía) 'inquiry; knowledge acquired by investigation') [1] is the systematic study and documentation of the human past. [2] [3] The period of events before the invention of writing systems is considered prehistory. [4] ". History" is an umbrella term comprising past events as well as the ... history, discipline that studies the chronological record of events, usually attempting, on the basis of a critical examination of source materials, to explain events.. For the principal treatment of the writing of history, and the scholarly research associated with it, see historiography.There are many branches of the study of history, among them world history, intellectual history, social ... Our 9 best-selling history titles feature in-depth storytelling and iconic imagery to engage and inform on the people, the wars, and the events that shaped America and the world. subscribe today. Facebook; Twitter; Instagram; YouTube "History is a guide to navigation in perilous times. History is who we are and why we are the way we are." Discover captivating world history news and fascinating stories from around the globe on Smithsonian Magazine's World History category.. 
+            Here is some text for additional context to base your answer on, but you are not
+            limited to using what's in this text for your response: 
+
+            A Comprehensive Review of Irish History: From Ancient Times to the Present Day
+Introduction
+Ireland's history is a rich and complex narrative spanning thousands of years. Its story involves cultural assimilation, foreign invasions, religious revolutions, and struggles for independence. This comprehensive review will take you through the significant milestones in Irish history, breaking down each period with expanded content and a chronological context.
+
+Prehistoric Ireland (c. 8000-500 BCE)
+The first humans to arrive in Ireland came around 8000 BCE, during the Mesolithic period. They were hunter-gatherers who lived off the abundant fish and game that the island offered. Ireland's most famous prehistoric monument, Newgrange, dates back to around 3200 BCE. This passage tomb is renowned for its winter solstice phenomenon, where the inner chamber is illuminated by the rising sun, revealing intricate Neolithic art.
+
+Celtic Ireland (500 BCE - 400 CE)
+Around 500 BCE, the Celts began to arrive in Ireland, bringing their language, traditions, and iron-working technology. These Celtic tribes were organized into a system of petty kingdoms, or "tuatha," which had their own rulers and were often at war with each other. The druidic religion of the Celts involved nature worship, and their art and craftsmanship, especially in metalwork, were advanced.
+
+Christianization and Early Medieval Period (400 - 800 CE)
+St. Patrick is traditionally credited with bringing Christianity to Ireland in the 5th century CE. Monasticism flourished in Ireland, and monasteries like Clonmacnoise became centers of learning and manuscript illumination. The Book of Kells, produced around 800 CE, is one of the most exquisite examples of Insular art, blending Christian and Celtic motifs.
+
+Viking Invasions (800 - 1014 CE)
+Starting from the late 8th century, Norse Vikings began to raid Irish monasteries and settlements. By the 9th century, they had established fortified coastal towns like Dublin and Waterford. The Vikings were initially viewed as pagans and plunderers but eventually became part of the Irish socio-political landscape. The Battle of Clontarf in 1014 saw the Irish led by High King Brian Boru defeat the Vikings, although Boru himself was killed.
+
+Anglo-Norman Period (1169 - 1541 CE)
+The Anglo-Norman invasion began in 1169 when Richard de Clare, also known as Strongbow, landed in Ireland. King Henry II of England later arrived, bringing significant territories under English control. The Anglo-Normans introduced feudalism and were instrumental in the spread of Roman Catholicism. Over time, they became integrated with the Irish, leading to a hybrid culture.
+
+Tudor Conquest and Plantations (1541 - 1607 CE)
+During the 16th century, the Tudor monarchs sought to extend English rule over the whole of Ireland. This led to the Nine Years' War (1594-1603), which ended in the defeat of the Irish chieftains. The subsequent English "plantations" involved confiscating land from the Irish and 
+            
+
+> Finished chain.
+

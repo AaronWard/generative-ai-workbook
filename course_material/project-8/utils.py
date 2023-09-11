@@ -4,8 +4,6 @@ from langchain.chains import LLMChain
 from langchain.tools import DuckDuckGoSearchRun
 
 # Function to generate video script
-
-
 def generate_script(prompt, data_text, video_length, creativity, api_key):
 
     # Template for generating 'Title'
@@ -47,6 +45,8 @@ def generate_script(prompt, data_text, video_length, creativity, api_key):
     # Executing the chains we created for 'Title'
     title_context = add_context(data_text, context_len=100)
     title = title_chain.run(subject=prompt, additional_context=title_context)
+    print(title)
+
 
     search_term = subject_chain.run(subject=prompt, title=title, additional_context=title_context)
     print(search_term)

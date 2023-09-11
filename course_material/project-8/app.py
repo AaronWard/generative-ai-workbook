@@ -8,17 +8,17 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(Path('../../.env'))
 
 # Applying Styling
-st.markdown("""
-<style>
-div.stButton > button:first-child {
-    background-color: #0099ff;
-    color:#ffffff;
-}
-div.stButton > button:hover {
-    background-color: #00ff00;
-    color:#FFFFFF;
-    }
-</style>""", unsafe_allow_html=True)
+# st.markdown("""
+# <style>
+# div.stButton > button:first-child {
+#     background-color: #0099ff;
+#     color:#ffffff;
+# }
+# div.stButton > button:hover {
+#     background-color: #00ff00;
+#     color:#FFFFFF;
+#     }
+# </style>""", unsafe_allow_html=True)
 
 # Creating Session State Variable
 if 'API_Key' not in st.session_state:

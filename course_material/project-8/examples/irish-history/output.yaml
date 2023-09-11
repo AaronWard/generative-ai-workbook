@@ -96,3 +96,13 @@ During the 16th century, the Tudor monarchs sought to extend English rule over t
 
 > Finished chain.
 
+
+# In this, i added the ability to pass a file as additional data to work with
+# for the LLM. The sequence is also updated, with an additional LLMChain to make
+# a good descriptive search term to gather data rather than passing the full context
+# to the LLM search - it would often cause an error if the prompt string was too long. $schema
+
+# It does tend to forget to write it in a script format the more data you give it, basically
+# just turns into a summarize at a certain point.
+# Maybe with a model like GPT 4 first coming up plan first and then employing agents
+# to go through the script and assess it's quality would be a better approach for this.

@@ -1,5 +1,5 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Pinecone
+from langchain.vectorstores import Pinecone, Chroma
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 import pinecone
 import asyncio
@@ -50,11 +50,24 @@ def push_to_pinecone(pinecone_apikey, pinecone_environment, pinecone_index_name,
     index = Pinecone.from_documents(docs, embeddings, index_name=index_name)
     return index
 
+def push_to_chroma(docs, embeddings, persist_directory="./chroma_db"):
+    '''
+    returns a chromadb vector representation store  
+    instance of documents
+
+    Args:
+        - docs (list): chunks of documents.
+        - embeddings (): some embedding function
+    Returns:
+        - db (Chroma.from_documents): 
+    '''
+    return Chroma.from_documents(docs, embeddings, persist_directory=persist_directory)
+
+def pull_from_chroma(embeddings,  persist_directory="./chroma_db"):
+    return Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+
 def pull_from_pinecone(pinecone_apikey, pinecone_environment, pinecone_index_name, embeddings):
     print('Pulling data from Pinecone...')
-    print(f"API Key: {pinecone_apikey}")  # Debugging line
-    print(f"Environment: {pinecone_environment}")  # Debugging line
-    print(f"Index Name: {pinecone_index_name}")  # Debugging line
 
     pinecone.init(
         api_key=pinecone_apikey,
@@ -62,17 +75,15 @@ def pull_from_pinecone(pinecone_apikey, pinecone_environment, pinecone_index_nam
     )
     
     index_name = pinecone_index_name
-    
-    try:
-        index = Pinecone.from_existing_index(index_name, embeddings)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        raise  # Re-raise the exception for higher-level handling
-    
-    return index
+
+    return Pinecone.from_existing_index(index_name, embeddings)
 
 # This function will help us in fetching the top relevent documents from our vector store - Pinecone Index
-def get_similar_docs(index, query, k=2):
+def get_similar_docs(db, query, k=2):
     print('Performing similarity search...')
-    similar_docs = index.similarity_search(query, k=k)
+    similar_docs = db.similarity_search(query, k=k)
     return similar_docs
+
+
+if __name__ == "__main__":
+    pass

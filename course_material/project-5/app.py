@@ -1,6 +1,13 @@
-# from pathlib import Path
-# from dotenv import find_dotenv, load_dotenv
-# load_dotenv(Path('../../.env'))
+"""
+Small example showcasing a chat interface
+and conversation summarization capability
+
+"""
+import os
+from pathlib import Path
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(Path('../../.env'))
 
 import streamlit as st
 from streamlit_chat import message
@@ -9,15 +16,14 @@ from langchain.chains import ConversationChain
 from langchain.chains.conversation.memory import (ConversationBufferMemory, 
                                                   ConversationSummaryMemory, 
                                                   ConversationBufferWindowMemory
-
-                                                  )
+                                                )
 
 if 'conversation' not in st.session_state:
     st.session_state['conversation'] = None
 if 'messages' not in st.session_state:
     st.session_state['messages'] =[]
 if 'API_Key' not in st.session_state:
-    st.session_state['API_Key'] = ''
+    st.session_state['API_Key'] = os.environ['OPENAI_API_KEY']
 
 # Setting page title and header
 st.set_page_config(page_title="Chat GPT Clone", page_icon=":robot_face:")

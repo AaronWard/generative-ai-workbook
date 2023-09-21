@@ -54,7 +54,9 @@ Free cloud based containers for LLMs and ML web apps.
 streamlit run app.py
 ```
 
-
+**Charts for streamlit**
+- https://echarts.apache.org/examples/en/index.html
+- https://github.com/andfanilo/streamlit-echarts-demo/tree/master/demo_echarts
 
 
 ### Lanchain Modules

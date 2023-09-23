@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Historia Lingua 🗺️</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #map-container {
+            height: 100%;
+            width: 70%;
+            float: left;
+            position: relative;
+        }
+
+        #mapid {
+            height: 100%;
+        }
+
+        #output-container {
+            height: 90%;
+            width: 30%;
+            overflow-y: scroll;
+            float: right;
+            background-color: #f2f2f2;
+            padding: 10px;
+            box-sizing: border-box;
+            position: relative; 
+        }
+
+        #slider-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+
+        #year-slider {
+            width: 500px;
+            height: 40px;
+            -webkit-appearance: none;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+        #year-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 40px;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+
+        #year-slider::-moz-range-thumb {
+            width: 20px;
+            height: 40px;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+
+        #year-label {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        #year-label span {
+            font-weight: bold;
+        }
+
+        #year-slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+
+        #year-slider-min,
+        #year-slider-max {
+            font-size: 12px;
+        }
+
+        #output {
+            margin-top: 20px;
+            min-height: 400px;
+            overflow-y: auto; 
+        }
+
+        #output p {
+            margin: 0;
+            overflow-y: auto; 
+        }
+
+        #current-model {
+            font-style: italic;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .loading::before {
+            content: "";
+            width: 60px;
+            height: 60px;
+            margin-top: 50%;
+            border: 6px solid #ccc;
+            border-top-color: #333;
+            border-radius: 70%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* style for the expand button */
+        .expand-button {
+            position: absolute;
+            background-color: #5C6B9C;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+            -webkit-user-select: none; /* Safari 3.1+ */
+            -moz-user-select: none; /* Firefox 2+ */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard syntax */
+        }
+
+        .model-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .current-model {
+            font-style: italic;
+            margin-right: 10px;
+        }
+
+        .change-model-button {
+            position: right;
+            float: right;
+            background-color: #5C6B9C;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div id="mapid"></div>
+    </div>
+    <div id="output-container">
+        <div class="model-container">
+            <p class="current-model">Current model: {{ session['model'] }}</p>
+            <button id="change-model-button" class="change-model-button">Change Model</button>
+        </div>
+        <h2>Historical Facts</h2>
+        <h5 id="selected-text" style="font-style: italic;"></h5>
+        <div id="output"></div>
+    </div>
+    <div id="slider-container">
+        <div id="year-slider-labels">
+            <span id="year-slider-min"></span>
+            <span id="year-slider-max"></span>
+        </div>
+        <input id="year-slider" type="range" min="-4000" max="2000" value="-1" class="slider" step="10">
+        <div id="year-label">Year: <span>0 AD</span></div>
+    </div>
+
+    <!-- add a button for expanding the selected text -->
+    <button id="expand-button" class="expand-button">Expand</button>
+
+    <script src="https://unpkg.com/jquery"></script>
+    <script src="https://unpkg.com/leaflet"></script>    
+    <script>
+        /**
+         * There are a number of main functionalities within the UI
+         * handled by javascript. Such as:
+         *
+         * 1. There is a slider that can be used to choose the time period from -4000BC to 2000AD.
+         * 2. When a map is clicked, the geo coordinates are used to determine
+         * the name of the location. These are then displayed onscreen in a bubble.
+         * 3. Then location in text format, along with the year are passed to the HistoryChain
+         * which requests a historical account for that location around the chosen time period.
+         * 4. The response is parsed and displayed in the output panel.
+         * 5. Event listeners are used to detect if someone want's to highlight a text and
+         * "expand" on that topic for further knowledge of that topic (same location/time period)
+         * 6. There is also the option to change your model type within the session.
+         * 
+         * TODO: Add images search results to the output panel
+         * 
+         **/
+        // Initializing necessary variables and map setup
+        var map = L.map('mapid').setView([51.505, -0.09], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+            attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+    
+        var output = document.getElementById('output');
+        var lastMarker;
+        var h2 = document.querySelector("#output-container h2");
+        var selectedText = '';
+        var clickedLat = null;
+        var clickedLng = null;
+        var zoom = null;
+
+        // Handling click events on map
+        map.on('click', function(e) {
+            if (lastMarker) {
+                map.removeLayer(lastMarker);
+            }
+    
+            var location = "";
+            clickedLat = e.latlng.lat;
+            clickedLng = e.latlng.lng;
+            zoom =  map.getZoom()
+            
+            $.ajax({
+                url: '/get_location',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    lat: clickedLat,
+                    lon: clickedLng,
+                    zoom: zoom,
+                    year: $('#year-slider').val()
+                }),
+                beforeSend: function() {
+                    output.innerHTML = '<div class="loading"></div>';
+                },
+                success: function(response) {
+                    var year = $('#year-slider').val();
+                    var yearString = year <= 0 ? Math.abs(year) + ' BC' : year + ' AD';
+                    location = response.address;
+                    h2.innerHTML = 'Historical Facts (' + response.address + ')';
+    
+                    document.getElementById('selected-text').textContent = "";
+    
+    
+                    lastMarker = L.marker(e.latlng).addTo(map)
+                        .bindPopup('Year: ' + yearString + '<br>' + 'Location: ' + response.address)
+                        .openPopup();
+    
+                    $.ajax({
+                        url: '/get_history',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            location: location,
+                            year: yearString
+                        }),
+                        success: function(response) {
+                            var facts = response.response.split(/\d+\.\s/);
+                            var factsList = '<ul>';
+                            for (var i = 1; i < facts.length; i++) {
+                                var fact = facts[i].trim();
+                                if (fact === ".") {
+                                    continue; // Skip if fact is a single full stop
+                                }
+                                var listItem = '<li>' + fact + '</li>';
+                                factsList += listItem;
+                            }
+                            factsList += '</ul>';
+    
+                            output.innerHTML = factsList;
+    
+                        }
+                    });
+                }
+            });
+        });
+    
+        // Handling year slider change
+        $('#year-slider').on('input', function() {
+            var year = $(this).val();
+            var yearString = year <= 0 ? Math.abs(year) + ' BC' : year + ' AD';
+            $('#year-label span').text(yearString);
+        });
+    
+        // Handling model change button
+        document.getElementById('change-model-button').addEventListener('click', function() {
+            sessionStorage.clear();
+            window.location.href = '/select_model';
+        });
+    
+        // Handling mouseup events for text selection
+        document.addEventListener('mouseup', function() {
+            var text = getSelectionText();
+            if (text) {
+                var expandButton = document.getElementById('expand-button');
+                var rect = window.getSelection().getRangeAt(0).getBoundingClientRect();
+                expandButton.style.left = rect.left + 'px';
+                expandButton.style.top = (window.scrollY + rect.top) + 'px';
+                expandButton.style.display = 'block'; // Show the button
+            }
+        });
+    
+        // Handler for expand button
+        document.getElementById('expand-button').addEventListener('click', function() {
+            var text = getSelectionText();
+            document.getElementById('selected-text').textContent = text;
+            this.style.display = 'none'; // Hide the button
+    
+            handleSelectedText(text);
+        });
+    
+        // Function to get selected text
+        function getSelectionText() {
+            var text = '';
+            if (window.getSelection) {
+                text = window.getSelection().toString();
+            } else if (document.selection && document.selection.type != 'Control') {
+                text = document.selection.createRange().text;
+            }
+            return text;
+        }
+    
+        // Function to handle selected text
+        function handleSelectedText(selectedText) {
+            var year = document.getElementById('year-slider').value;
+            var yearString = year <= 0 ? Math.abs(year) + ' BC' : year + ' AD';
+            var previousResponse = document.getElementById('output-container').querySelector('p').innerHTML;
+
+            $.ajax({
+                url: '/get_location',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    lat: clickedLat,
+                    lon: clickedLng,
+                    zoom: zoom,
+                    year: $('#year-slider').val()
+                }),
+                beforeSend: function() {
+                    output.innerHTML = '<div class="loading"></div>';
+                },
+                success: function(response) {
+                    var location = response.address;
+
+                    // Make subsequent request after the location is fetched
+                    $.ajax({
+                        url: '/handle_selected_text',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            location: location,
+                            year: yearString,
+                            previous_response: previousResponse,
+                            selected_text: selectedText
+                        }),
+                        beforeSend: function() {
+                            output.innerHTML = '<div class="loading"></div>';
+                        },
+                        success: function(response) {
+                            var newResponse = response.response;
+
+                            // Update the output container with the new response
+                            var outputContainer = document.getElementById('output-container');
+                            outputContainer.innerHTML = previousResponse + '<p>' + newResponse + '</p>';
+
+                            var facts = newResponse.split(/\d+\.\s/);
+                            var factsList = '<ul>';
+                            for (var i = 1; i < facts.length; i++) {
+                                var fact = facts[i].trim();
+                                if (fact === ".") {
+                                    continue; // Skip if fact is a single full stop
+                                }
+                                var listItem = '<li>' + fact + '</li>';
+                                factsList += listItem;
+                            }
+                            factsList += '</ul>';
+
+                            output.innerHTML = factsList;
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(error);
+                        }
+                    });
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });
+        }
+
+    </script>
+    
+</body>
+</html>

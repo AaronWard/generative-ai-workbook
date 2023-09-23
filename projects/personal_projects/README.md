@@ -9,3 +9,4 @@
 3. `Fact Checker`: A simple `Streamlit` application using a sequential chain that answers a question and reassesses if the response is true based on a number of assertions. 
 4. `Youtube Video QA`: Download the transcript of a youtube video using the `YoutubeLoader`, and store the text from the transcript in a `FAISS` vectorstore. A `ChatOpenAI` is then used to answer questions about the video.
 5. `historia-lingua`: Interactive LLM powered history application. You decide the year and location using a graphical interface, and the LLM provides you history knowledge of what happened in that region around that time period.
+6. `echarts-streamlit`: Streamlit app with example of using Apache ECharts to display data - The goal is to have an LLM to autogenerate and return nice looking charts using eCharts to be displayed in the UI.

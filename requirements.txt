@@ -27,6 +27,9 @@ nbdev==2.3.12
 soundfile
 sounddevice
 playsound
+geopy
+flask_session
+flask
 
 
 # wikipedia==1.4.0

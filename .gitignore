@@ -8,6 +8,10 @@ __pycache__/
 
 */.DS_Store
 
+**/chroma_db/*
+
+*/chroma_db
+
 # Distribution / packaging
 .Python
 build/

@@ -31,7 +31,7 @@ playsound
 geopy
 flask_session
 flask
-
+open-interpreter # needs >= python3.10
 
 # wikipedia==1.4.0
 # youtube-transcript-api==0.6.0

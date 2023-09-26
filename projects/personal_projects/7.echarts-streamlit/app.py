@@ -3,19 +3,38 @@ import streamlit as st
 from streamlit_chat import message
 from streamlit_echarts import st_echarts
 
+def main():
+    ###################### Title and main panel configuration #################################
+    st.set_page_config(
+        page_title="Streamlit x Apache ECharts 📈",
+        page_icon="📈",
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items={
+            'About': "# This is a header. This is an *extremely* cool app!"
+        }
+    )
 
-if 'conversation' not in st.session_state:
-    st.session_state['conversation'] = None
-if 'messages' not in st.session_state:
-    st.session_state['messages'] =[]
+    chart_count = 1
 
-st.title("Streamlit x Apache ECharts 📈")
+    st.title("Streamlit x Apache ECharts 📈")
+    upload = st.file_uploader("Upload CSV file", type="csv")
 
-def get_chart():
-    data = st.file_uploader("Upload CSV file", type="csv")
+    if upload is not None:
+        data = pd.read_csv(upload)
+        st.session_state['data'] = data
+    if 'conversation' not in st.session_state:
+        st.session_state['conversation'] = None
+    if 'messages' not in st.session_state:
+        st.session_state['messages'] =[]
 
-    if data:
-        data = pd.read_csv(data)
+
+    ###################### Side Bar #################################
+    with st.sidebar:
+        st.sidebar.title(f"Visualizations")
+        side_vis = None
+
+    def get_chart(data):
 
         # Filter out rows where DIAGNOSED_COVID is not 1 and drop rows with null DIAGNOSES_DATE
         data = data[data['DIAGNOSED_COVID'] == 1].dropna(subset=['DIAGNOSES_DATE'])
@@ -40,8 +59,11 @@ def get_chart():
                     }
                 },
                 "xAxis": {"type": 'category', "boundaryGap": True, "data": dates},
-                "yAxis": {"type": 'value', "boundaryGap": [0, '100%']},
-                "dataZoom": [{"type": 'inside', "start": 0, "end": 20}, {"start": 0, "end": 10}],
+                "yAxis": {"type": 'value', "boundaryGap": [0, "5%"]},
+                "dataZoom": [
+                        {"type": 'inside', "start": 0, "end": 100},
+                        {"start": 0, "end": 10}
+                    ],
                 "series": [
                     {
                         "name": 'COVID-19 Cases',
@@ -63,41 +85,36 @@ def get_chart():
                 ]
             }
         return option
-        
-        # st.write(value)
-        # return value
+    
+    ###################### Chat Interface #################################
 
-response_container = st.container()
-# Here we will have a container for user input text box
-container = st.container()
+    response_container = st.container()
+    # Here we will have a container for user input text box
+    container = st.container()
 
-with container:
-    with st.form(key='my_form', clear_on_submit=True):
-        user_input = st.text_area("Your question goes here:", key='input', height=100)
-        submit_button = st.form_submit_button(label='Send')
+    with container:
+        with st.form(key='my_form', clear_on_submit=True):
+            user_input = st.text_area("Your question goes here:", key='input', height=100)
+            submit_button = st.form_submit_button(label='Send')
 
-        if submit_button:
-            st.session_state['messages'].append(user_input)
-            option = get_chart()
-            st.session_state['messages'].append("response")
+            if submit_button:
+                if 'data' in st.session_state:
+                    st.session_state['messages'].append(user_input)
+                    st.session_state['messages'].append("Here is your chart :)")
 
-
-            with response_container:
-                for i in range(len(st.session_state['messages'])):
-                    if (i % 2) == 0:
-                        message(st.session_state['messages'][i], is_user=True, key=str(i) + '_user')
-                    else:
-                        message(st.session_state['messages'][i], key=str(i) + '_AI')
-                        st_echarts(option)
-                        # message(st.write(value))
-
-
-
-        
-                
-
+                    with response_container:
+                        for i in range(len(st.session_state['messages'])):
+                            if (i % 2) == 0:
+                                message(st.session_state['messages'][i], is_user=True, key=str(i) + '_user')
+                            else:
+                                message(st.session_state['messages'][i], key=str(i) + '_AI')
+                                with st.sidebar:
+                                    st_echarts(get_chart(st.session_state['data']), key=chart_count)
+                                    chart_count += 1
+                else:
+                    st.warning('No data provided')
 
 
 #Invoking main function
 if __name__ == '__main__':
-    pass
+    main()

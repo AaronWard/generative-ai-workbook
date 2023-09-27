@@ -9,6 +9,7 @@ AutoGen provides multi-agent conversation framework as a high-level abstraction.
 * https://github.com/microsoft/autogen
 * https://microsoft.github.io/autogen/blog/
 * https://microsoft.github.io/autogen/docs/Examples/AutoGen-AgentChat/
+* https://natural20.com/learn-ai/autogen/
  
 
 **Videos**

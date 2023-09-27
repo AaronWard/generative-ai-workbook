@@ -14,7 +14,6 @@ def main():
             'About': "# This is a header. This is an *extremely* cool app!"
         }
     )
-
     chart_count = 1
 
     st.title("Streamlit x Apache ECharts 📈")

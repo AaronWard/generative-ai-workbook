@@ -17,6 +17,9 @@ __pycache__/
 /projects/autogen/concept_examples/docs
 chromadb/
 
+*/.DS_Store
+**/.DS_Store
+
 # Distribution / packaging
 .Python
 build/

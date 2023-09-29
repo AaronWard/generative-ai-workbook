@@ -6,12 +6,16 @@ __pycache__/
 # C extensions
 *.so
 
+
+# Use defined ignores
 **/OAI_CONFIG_LIST
 */OAI_CONFIG_LIST
 
 */.DS_Store
 **/chroma_db/*
 */chroma_db
+/projects/autogen/concept_examples/docs
+chromadb/
 
 # Distribution / packaging
 .Python
@@ -118,8 +122,6 @@ ipython_config.py
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
-
-/projects/autogen/concept_examples/docs
 
 # Celery stuff
 celerybeat-schedule

@@ -12,7 +12,7 @@ from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 from typing import List, Dict, Union, Optional, Set
 
-def load_config_list_from_dotenv(dotenv_file_path: Optional[str] = None,
+def config_list_from_dotenv(dotenv_file_path: Optional[str] = None,
                                  filter_dict: Optional[dict] = None) -> List[Dict[str, Union[str, Set[str]]]]:
     """
     Loads configuration details from a .env file or from the environment,
@@ -34,7 +34,10 @@ def load_config_list_from_dotenv(dotenv_file_path: Optional[str] = None,
     Example:
         >>> load_config_list_from_dotenv(dotenv_file_path='path_to_dotenv_file')
         models to use:  ['gpt-4', 'gpt-3.5-turbo']
-        [{'model': 'gpt-4', 'api_key': 'some_api_key'}, {'model': 'gpt-3.5-turbo', 'api_key': 'some_api_key'}]
+        [
+            {'model': 'gpt-4', 'api_key': 'some_api_key'}, 
+            {'model': 'gpt-3.5-turbo', 'api_key': 'some_api_key'}
+        ]
     """
 
     if dotenv_file_path:
@@ -49,16 +52,9 @@ def load_config_list_from_dotenv(dotenv_file_path: Optional[str] = None,
                         "gpt-3.5-turbo",
                     }
                 }
-
+        
     env_var = [
-        {
-            'model': 'gpt-4',
-            'api_key': os.getenv('OPENAI_API_KEY')
-        },
-        {
-            'model': 'gpt-3.5-turbo',
-            'api_key': os.getenv('OPENAI_API_KEY')
-        }
+        {'model': model, "api_key": os.getenv('OPENAI_API_KEY')} for model in filter_dict['model']
     ]
 
     # Create a temporary file
@@ -74,9 +70,10 @@ def load_config_list_from_dotenv(dotenv_file_path: Optional[str] = None,
             filter_dict=filter_dict
         )
 
-    assert len(config_list) > 0
-    print("models to use: ", [config_list[i]["model"]
-          for i in range(len(config_list))])
+    if len(config_list) == 0:
+        raise ValueError("No configurations loaded.")
+    print("models to use: ", [config_list[i]["model"] for i in range(len(config_list))])
+
 
     return config_list
 

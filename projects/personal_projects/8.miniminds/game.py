@@ -6,6 +6,8 @@ from person import Person
 from game_state import GameState
 from game_view.map import Map
 
+from events.chat_with_person_event import ChatWithPersonEvent
+
 class Game:
     def __init__(self, screen):
         self.screen = screen
@@ -110,4 +112,12 @@ class Game:
         
     def chat_with_person(self):
         if self.person_to_chat_with:
+            # self.event = ChatWithPersonEvent(self.screen, self, self.person_to_chat_with)
             print(f"You are now chatting with {self.person_to_chat_with}.")  # Use the stored person's name
+
+    def process_mouse_event(self, event):
+        x, y = event.pos
+        if hasattr(self, 'chat_button_rect') and self.chat_button_rect.collidepoint(x, y):
+            person = self.get_person_near_player()  # Assume you have a method to get the person near the player
+            if person:
+                self.event = ChatWithPersonEvent(self.screen, self, person)

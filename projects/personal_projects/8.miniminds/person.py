@@ -10,7 +10,7 @@ class Person:
         self.health = 10
         self.position = [0, 0]
 
-        self.image = pygame.image.load(image_file)
+        self.image = pygame.image.load(self.image_file)
         self.image = pygame.transform.scale(self.image, (config.SCALE, config.SCALE))
 
         self.rect = pygame.Rect(

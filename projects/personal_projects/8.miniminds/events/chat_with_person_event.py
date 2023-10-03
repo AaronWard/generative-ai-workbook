@@ -2,7 +2,9 @@ import pygame
 import config
 from game_state import GameState
 
+
 class ChatWithPersonEvent:
+
     def __init__(self, screen, game, person):
         self.screen = screen
         self.game = game
@@ -10,8 +12,12 @@ class ChatWithPersonEvent:
         self.dialog = pygame.image.load("imgs/dialog.png")
         self.cut = 0
         self.max_cut = 2  # You can adjust this based on the number of dialog scenes you have
+        self.font = pygame.font.Font(None, 36)
+
 
     def render(self):
+        text = self.font.render(f"Chat with {self.person.name}", True, (255, 255, 255)) 
+
         if self.cut == 0:
             self.render_scene_0()
         elif self.cut == 1:
@@ -22,13 +28,13 @@ class ChatWithPersonEvent:
     def render_scene_0(self):
         self.screen.blit(self.dialog, (0, 300))
         # font = pygame.font.Font('fonts/PokemonGb.ttf', 20)
-        img = font.render(f"Hi, I am {self.person.name}.", True, config.BLACK)
+        img = self.font.render(f"Hi, I am {self.person.name}.", True, config.BLACK)
         self.screen.blit(img, (40, 400))
 
     def render_scene_1(self):
         self.screen.blit(self.dialog, (0, 300))
         # font = pygame.font.Font('fonts/PokemonGb.ttf', 20)
-        img = font.render("How can I help you today?", True, config.BLACK)
+        img = self.font.render("How can I help you today?", True, config.BLACK)
         self.screen.blit(img, (40, 400))
 
     def render_scene_2(self):

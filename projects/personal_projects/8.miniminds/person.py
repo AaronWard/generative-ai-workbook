@@ -2,10 +2,11 @@ import pygame
 import config
 
 class Person:
-    def __init__(self, name, person_type, image_file="imgs/player.png"):  # Set a default value for 'image_file'
+    def __init__(self, name, personality_type, image_file="imgs/player.png"):  # Set a default value for 'image_file'
         print("Person created")
         self.name = name
-        self.type = person_type
+        self.personality_type = personality_type
+        self.image_file = image_file
         self.health = 10
         self.position = [0, 0]
 
@@ -24,6 +25,12 @@ class Person:
         rect = pygame.Rect(x * config.SCALE, y * config.SCALE, config.SCALE, config.SCALE)
         screen.blit(self.image, rect)
 
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"Person(name={self.name}, personality_type={self.personality_type}, image_file={self.image_file})"
 
 
 class PersonFactory:

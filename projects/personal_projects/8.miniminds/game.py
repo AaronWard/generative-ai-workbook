@@ -42,6 +42,7 @@ class Game:
                 self.process_key_event(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.process_mouse_event(event)
+
                 
     def process_key_event(self, event):
         if event.key == pygame.K_ESCAPE:
@@ -92,7 +93,7 @@ class Game:
                         if person.position == [new_x, new_y]:
                             if dx == 0 and dy == 0:  # This is the player's position
                                 continue
-                            return person.name  # Return the name of the person around the player
+                            return person  # Return the person object around the player
         return None
         
     def place_person_on_grass(self):
@@ -112,12 +113,12 @@ class Game:
         
     def chat_with_person(self):
         if self.person_to_chat_with:
-            # self.event = ChatWithPersonEvent(self.screen, self, self.person_to_chat_with)
-            print(f"You are now chatting with {self.person_to_chat_with}.")  # Use the stored person's name
+            # Assuming person_to_chat_with is a Person object, not just the name
+            self.event = ChatWithPersonEvent(self.screen, self, self.person_to_chat_with)
+            print(f"You are now chatting with {self.person_to_chat_with.name}.")  
+
 
     def process_mouse_event(self, event):
         x, y = event.pos
         if hasattr(self, 'chat_button_rect') and self.chat_button_rect.collidepoint(x, y):
-            person = self.get_person_near_player()  # Assume you have a method to get the person near the player
-            if person:
-                self.event = ChatWithPersonEvent(self.screen, self, person)
+            self.chat_with_person()

@@ -126,7 +126,7 @@ class StreamlitAgent():
                 self.config_list,
                 message,
                 queue,
-                callback
+                None
             )
         )
         process.start()

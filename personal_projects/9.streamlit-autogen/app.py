@@ -74,29 +74,31 @@ def main():
             user_input = st.text_area("Your question goes here:", key='input', height=100)
             submit_button = st.form_submit_button(label='Send')
 
-            if submit_button:
-                st.session_state.messages.append({"content": user_input, "is_user": True})
-                
-                # Create Queue for communication
-                message_queue = Queue()
+        if submit_button:
+            st.session_state.messages.append({"content": user_input, "is_user": True})
+            message(f"You: {st.session_state.get('messages', [])[-1]['content']}", is_user=True, key=f"user_msg_0")
 
-                # Start a thread that listens for messages from the agent and updates the UI
-                listener_thread = threading.Thread(target=message_listener, args=(message_queue,))
-                listener_thread.start()
+            message_queue = Queue()
 
-                agent = StreamlitAgent()
-                agent.run(user_input, update_ui)  
-                
-    
-                # Move the message display outside the form block
-                with response_container:
-                    for i, msg in enumerate(st.session_state.get('messages', [])):
-                        is_user = msg["is_user"]
-                        content = msg["content"]
-                        if is_user:
-                            message(f"You: {content}", is_user=True, key=f"user_msg_{i}")
-                        else:
-                            message(f"Agent: {content}", is_user=False, key=f"agent_msg_{i}")
+            # Start a thread that listens for messages from the agent and updates the UI
+            listener_thread = threading.Thread(target=message_listener, args=(message_queue,))
+            listener_thread.start()
+
+            agent = StreamlitAgent()
+            agent.run(user_input, update_ui)  
+
+    # Move the message display outside the form block
+    with response_container:
+        # Create Queue for communication        
+        for i, msg in enumerate(st.session_state.get('messages', [])):
+            is_user = msg["is_user"]
+            content = msg["content"].replace("TERMINATE", "")
+
+            if is_user:
+                message(f"You: {content}", is_user=True, key=f"user_msg_{i}")
+            else:
+                message(f"Agent: {content}", is_user=False, key=f"agent_msg_{i}")
+
 
 
 if __name__ == '__main__':

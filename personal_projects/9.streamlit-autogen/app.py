@@ -95,9 +95,9 @@ def main():
             content = msg["content"].replace("TERMINATE", "")
 
             if is_user:
-                message(f"You: {content}", is_user=True, key=f"user_msg_{i}")
+                message(f"You {i}: {content}", is_user=True, key=f"user_msg_{i}")
             else:
-                message(f"Agent: {content}", is_user=False, key=f"agent_msg_{i}")
+                message(f"Agent {i}: {content}", is_user=False, key=f"agent_msg_{i}")
 
 
 

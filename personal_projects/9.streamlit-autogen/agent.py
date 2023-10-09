@@ -89,13 +89,12 @@ class StreamlitAgent():
     def is_termination_message(self, x):
         return x.get("content", "") and x.get("content", "").rstrip().endswith("TERMINATE")
 
-    def run_in_process(self, message, callback):
+    def run_in_process(self, message, message_queue, callback):
         """
         Run initiate_chat in a separate process to avoid blocking.
         """
-        queue = Queue()
-
-        process = Process( # process_target()?
+        # Start a process that runs the agent and puts the responses in the message queue
+        process = Process(
             target=self._chat_target,
             args=(
                 {
@@ -125,20 +124,19 @@ class StreamlitAgent():
                 },
                 self.config_list,
                 message,
-                queue,
-                None
+                message_queue,
             )
         )
         process.start()
-        # process.join()
-        
-        # Get messages from queue
-        runner_msg, assistant_msg = queue.get()        
-        # Update UI with messages
-        callback(runner_msg, assistant_msg)
+        # Start a thread that listens for messages from the agent and calls the callback
+        # listener_thread = threading.Thread(target=message_listener, args=(message_queue, callback))
+        # listener_thread.start()
 
     def run(self, message, callback):
         """
         Run Autogen chat with the coding_runner agent.
         """
+        # Create a Queue for inter-process communication
+        message_queue = Queue()
+        # Run the agent in a separate process
         self.run_in_process(message, callback)

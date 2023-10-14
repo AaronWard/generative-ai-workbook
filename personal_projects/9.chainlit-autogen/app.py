@@ -16,6 +16,8 @@ data_relative_path = './data/synthetic_covid_dataset_20230828.csv'
 data_path = str(Path(__file__).absolute().parent.joinpath(data_relative_path).resolve())
 data_loc_context = f"\n\nHere is the path to data that you should import: {data_path}"
 data_dict_context = f"\n\nHere is the data dictionary: {dictionary.PROMPT_STRING}"
+termination_notice = '\n\nDo not say show appreciation in your responses, say only what is necessary. if "Thank you" or "You\'re welcome" are said in the conversation, then say \"TERMINATE\" \
+                     to indicate the conversation is finished and this is your last message.'
 
 MAX_ITER = 10
 USER_NAME = "User"
@@ -35,17 +37,22 @@ Here is the path to the data available to you: `{data_path}`
 async def setup_agent():
     await cl.Avatar(
         name=USER_NAME,
-        url="https://api.dicebear.com/7.x/thumbs/svg?seed=Callie&flip=true&rotate=350",
+        url="https://api.dicebear.com/7.x/thumbs/svg?seed=Callie&rotate=360&eyes=variant4W14&eyesColor=ffffff,000000",
     ).send()
 
     await cl.Avatar(
         name=USER_PROXY_NAME,
-        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Kiki&backgroundColor=757575",
+        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
     ).send()
 
     await cl.Avatar(
         name=ASSISTANT_NAME,
-        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Kiki&backgroundColor=757575",
+        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
+    ).send()
+
+    await cl.Avatar(
+        name="chatbot",
+        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Dusty&backgroundColor=ffb300",  # Change this to the desired avatar URL
     ).send()
 
     agent = MultiAgent(work_dir=output_folder)
@@ -55,8 +62,9 @@ async def setup_agent():
     cl.user_session.set('agent', agent)
     cl.user_session.set(ASSISTANT_NAME, coding_assistant)
     cl.user_session.set(USER_PROXY_NAME, coding_runner)
-    
-    await cl.Message(content=WELCOME_MESSAGE).send()
+
+    # Using the new avatar name for the final response
+    await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
 
 @cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
 async def upload_file(files: any):
@@ -87,43 +95,55 @@ async def run_conversation(user_message: str):
         if user_message == cl.user_session.get('user_message'):
             return
         
-        user_message += data_loc_context + data_dict_context
-
         agent = cl.user_session.get("agent")
         assistant = cl.user_session.get(ASSISTANT_NAME)
         user_proxy = cl.user_session.get(USER_PROXY_NAME)
-        
+
+        assistant
+        assistant_model_type = assistant.llm_config['config_list'][0]['model']   # Assuming single model in config list
+        user_proxy_model_type = user_proxy.llm_config['config_list'][0]['model'] 
+        #
+        if assistant_model_type == "gpt-3.5-turbo" or user_proxy_model_type == "gpt-3.5-turbo":
+            user_message += data_loc_context + data_dict_context + termination_notice
+        else:
+            user_message += data_loc_context + data_dict_context
+
         cur_iter = 0
+        final_response = None
+        naming_dict = {
+                "User": "You",
+                "user": USER_PROXY_NAME,
+                "assistant": ASSISTANT_NAME,
+        }
+
         while cur_iter < MAX_ITER:
             if len(assistant.chat_messages[user_proxy]) == 0 :
-                print('initiating chat')
-                user_proxy.initiate_chat(
-                    assistant,
-                    message=user_message,
-                    config_list=agent.config_list
-                )
+                user_proxy.initiate_chat(assistant, message=user_message, config_list=agent.config_list)
             else:
-                print('FOLLOW up message')
-                # followup of the previous question
-                user_proxy.send(
-                    recipient=assistant,
-                    message=user_message,
-                )
+                user_proxy.send(recipient=assistant, message=user_message)
             
             message_history = assistant.chat_messages[user_proxy]
             last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
-            print(message_history)
 
-            naming_dict = {
-                "User" : "You",
-                "user" : USER_PROXY_NAME,
-                "assistant": ASSISTANT_NAME,
-            }
+            # Identify the final response
+            final_response = message_history[-1]["content"].replace("TERMINATE", "")
+            
+            # Loop through and display the messages, excluding the final one
+            for message in message_history[last_seen_message_index:-1]:
+                await cl.Message(
+                    author=naming_dict[message["role"]],
+                    content=message["content"].replace("TERMINATE", ""),
+                    indent=1  # Indentation applied
+                ).send()
+            
+            # Send the final message without indentation and with "chatbot" author
+            await cl.Message(
+                author="chatbot",
+                content=final_response,
+                indent=0  # No indentation
+            ).send()
 
-            for message in message_history[last_seen_message_index+1:]:
-                await cl.Message(author=naming_dict[message["role"]], content=message["content"].replace("TERMINATE", "")).send()
             cl.user_session.set('last_seen_message_index', len(message_history))
-
             cur_iter += 1
             return
     except Exception as e:

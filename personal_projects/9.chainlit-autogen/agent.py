@@ -30,9 +30,12 @@ class MultiAgent():
         """
         Initialize StreamlitAgent with coding assistant and runner agents.
         """
+        self.model  = kwargs.get('model', 'gpt-3.5-turbo')
+        self.work_dir = kwargs.get('work_dir', None)
+        self.temperature = kwargs.get('temperature', None)
         self.env_path = '../../.env'
         self.config_list = self.get_config_list()
-        self.work_dir = self.work_dir = kwargs.get('work_dir', None)
+
 
     def clear_history(self, clear_previous_work=False):
         """
@@ -76,13 +79,12 @@ class MultiAgent():
         config_list = autogen.config_list_from_dotenv(
             dotenv_file_path=self.env_path,
             model_api_key_map={
-                # "gpt-4": "OPENAI_API_KEY",
+                "gpt-4": "OPENAI_API_KEY",
                 "gpt-3.5-turbo": "OPENAI_API_KEY",
             },
             filter_dict={
                 "model": {
-                    # "gpt-4",
-                    "gpt-3.5-turbo",
+                    self.model,
                 }
             }
         )
@@ -96,7 +98,7 @@ class MultiAgent():
                     "request_timeout": 1000,
                     "seed": 42,
                     "config_list": self.config_list, 
-                    "temperature": 0.8,
+                    "temperature": self.temperature,
                 }
         }
         coding_runner_config = {
@@ -112,7 +114,7 @@ class MultiAgent():
                     "request_timeout": 1000,
                     "seed": 42,
                     "config_list": self.config_list,
-                    "temperature": 0.4,
+                    "temperature": self.temperature,
                 },
         }
 

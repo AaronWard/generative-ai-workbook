@@ -16,8 +16,8 @@ data_relative_path = './data/synthetic_covid_dataset_20230828.csv'
 data_path = str(Path(__file__).absolute().parent.joinpath(data_relative_path).resolve())
 data_loc_context = f"\n\nHere is the path to data that you should import: {data_path}"
 data_dict_context = f"\n\nHere is the data dictionary: {dictionary.PROMPT_STRING}"
-termination_notice = '\n\nDo not say show appreciation in your responses, say only what is necessary. if "Thank you" or "You\'re welcome" are said in the conversation, then say \"TERMINATE\" \
-                     to indicate the conversation is finished and this is your last message.'
+termination_notice = '\n\nDo not say show appreciation in your responses, say only what is necessary. if "Thank you" or "You\'re welcome" are said in the conversation, then say TERMINATE ' \
+                     'to indicate the conversation is finished and this is your last message.'
 
 MAX_ITER = 10
 USER_NAME = "User"
@@ -33,8 +33,36 @@ Here is the path to the data available to you: `{data_path}`
 
 ##########################################################
 
+@cl.on_settings_update
+async def setup_agent(settings):
+    print("on_settings_update", settings)
+
 @cl.on_chat_start
 async def setup_agent():
+    # Set up agent configuration
+    settings = await cl.ChatSettings(
+            [
+                cl.input_widget.Select(
+                    id="Model",
+                    label="Model",
+                    values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"],
+                    initial_index=0
+                ),
+                cl.input_widget.Slider(id="Temperature", label="Temperature (randomness)", initial=0.1, min=0, max=2, step=0.1),
+            ]
+    ).send()
+
+    print(settings)
+
+    # Initialize Agents
+    agent = MultiAgent(work_dir=output_folder,
+                       temperature=settings['Temperature'],
+                       model=settings["Model"]
+                    )
+    agent.clear_history()
+    coding_assistant, coding_runner = agent.instiate_agents()
+
+    # UI Configuirations
     await cl.Avatar(
         name=USER_NAME,
         url="https://api.dicebear.com/7.x/thumbs/svg?seed=Callie&rotate=360&eyes=variant4W14&eyesColor=ffffff,000000",
@@ -55,15 +83,11 @@ async def setup_agent():
         url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Dusty&backgroundColor=ffb300",  # Change this to the desired avatar URL
     ).send()
 
-    agent = MultiAgent(work_dir=output_folder)
-    agent.clear_history()
-    coding_assistant, coding_runner = agent.instiate_agents()
-
+    # Setting user session variables
     cl.user_session.set('agent', agent)
     cl.user_session.set(ASSISTANT_NAME, coding_assistant)
     cl.user_session.set(USER_PROXY_NAME, coding_runner)
 
-    # Using the new avatar name for the final response
     await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
 
 @cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
@@ -94,34 +118,35 @@ async def run_conversation(user_message: str):
         # check if user message changed
         if user_message == cl.user_session.get('user_message'):
             return
-        
+                
+        # Get agents and append termination notice if necessary
         agent = cl.user_session.get("agent")
         assistant = cl.user_session.get(ASSISTANT_NAME)
         user_proxy = cl.user_session.get(USER_PROXY_NAME)
 
-        assistant
         assistant_model_type = assistant.llm_config['config_list'][0]['model']   # Assuming single model in config list
         user_proxy_model_type = user_proxy.llm_config['config_list'][0]['model'] 
-        #
-        if assistant_model_type == "gpt-3.5-turbo" or user_proxy_model_type == "gpt-3.5-turbo":
-            user_message += data_loc_context + data_dict_context + termination_notice
-        else:
-            user_message += data_loc_context + data_dict_context
 
+        # Context injection for alignment  
+        user_message += data_loc_context + data_dict_context
+        if assistant_model_type == "gpt-3.5-turbo" or user_proxy_model_type == "gpt-3.5-turbo":
+            user_message += termination_notice
+        
+        # Variables for conversation loop
         cur_iter = 0
-        final_response = None
+        final_response = None  
         naming_dict = {
-                "User": "You",
-                "user": USER_PROXY_NAME,
-                "assistant": ASSISTANT_NAME,
+            "User": "You",
+            "user": USER_PROXY_NAME,
+            "assistant": ASSISTANT_NAME,
         }
 
-        while cur_iter < MAX_ITER:
-            if len(assistant.chat_messages[user_proxy]) == 0 :
-                user_proxy.initiate_chat(assistant, message=user_message, config_list=agent.config_list)
-            else:
-                user_proxy.send(recipient=assistant, message=user_message)
-            
+        if len(assistant.chat_messages[user_proxy]) == 0:
+            user_proxy.initiate_chat(assistant, message=user_message, config_list=agent.config_list)
+        else:
+            user_proxy.send(recipient=assistant, message=user_message)
+
+        while cur_iter < MAX_ITER:            
             message_history = assistant.chat_messages[user_proxy]
             last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
 
@@ -133,18 +158,18 @@ async def run_conversation(user_message: str):
                 await cl.Message(
                     author=naming_dict[message["role"]],
                     content=message["content"].replace("TERMINATE", ""),
-                    indent=1  # Indentation applied
+                    indent=1 
                 ).send()
             
-            # Send the final message without indentation and with "chatbot" author
-            await cl.Message(
-                author="chatbot",
-                content=final_response,
-                indent=0  # No indentation
-            ).send()
-
             cl.user_session.set('last_seen_message_index', len(message_history))
             cur_iter += 1
-            return
+
+        # Send the final message without indentation and with "chatbot" author, outside the loop
+        await cl.Message(
+            author="chatbot",
+            content=final_response,
+            indent=0  # No indentation
+        ).send()
+        
     except Exception as e:
         await cl.Message(content=f"An error occurred: {str(e)}").send()

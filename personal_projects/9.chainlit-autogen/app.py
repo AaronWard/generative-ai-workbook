@@ -82,46 +82,49 @@ async def upload_file(files: any):
 
 @cl.on_message
 async def run_conversation(user_message: str):
-    # check if user message changed
-    if user_message == cl.user_session.get('user_message'):
-        return
-    
-    user_message += data_loc_context + data_dict_context
-
-    agent = cl.user_session.get("agent")
-    assistant = cl.user_session.get(ASSISTANT_NAME)
-    user_proxy = cl.user_session.get(USER_PROXY_NAME)
-    
-    cur_iter = 0
-    while cur_iter < MAX_ITER:
-        if len(assistant.chat_messages[user_proxy]) == 0 :
-            print('initiating chat')
-            user_proxy.initiate_chat(
-                assistant,
-                message=user_message,
-                config_list=agent.config_list
-            )
-        else:
-            print('FOLLOW up message')
-            # followup of the previous question
-            user_proxy.send(
-                recipient=assistant,
-                message=user_message,
-            )
+    try:
+        # check if user message changed
+        if user_message == cl.user_session.get('user_message'):
+            return
         
-        message_history = assistant.chat_messages[user_proxy]
-        last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
-        print(message_history)
+        user_message += data_loc_context + data_dict_context
 
-        naming_dict = {
-            "User" : "You",
-            "user" : USER_PROXY_NAME,
-            "assistant": ASSISTANT_NAME,
-        }
+        agent = cl.user_session.get("agent")
+        assistant = cl.user_session.get(ASSISTANT_NAME)
+        user_proxy = cl.user_session.get(USER_PROXY_NAME)
+        
+        cur_iter = 0
+        while cur_iter < MAX_ITER:
+            if len(assistant.chat_messages[user_proxy]) == 0 :
+                print('initiating chat')
+                user_proxy.initiate_chat(
+                    assistant,
+                    message=user_message,
+                    config_list=agent.config_list
+                )
+            else:
+                print('FOLLOW up message')
+                # followup of the previous question
+                user_proxy.send(
+                    recipient=assistant,
+                    message=user_message,
+                )
+            
+            message_history = assistant.chat_messages[user_proxy]
+            last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
+            print(message_history)
 
-        for message in message_history[last_seen_message_index+1:]:
-            await cl.Message(author=naming_dict[message["role"]], content=message["content"].replace("TERMINATE", "")).send()
-        cl.user_session.set('last_seen_message_index', len(message_history))
+            naming_dict = {
+                "User" : "You",
+                "user" : USER_PROXY_NAME,
+                "assistant": ASSISTANT_NAME,
+            }
 
-        cur_iter += 1
-        return
+            for message in message_history[last_seen_message_index+1:]:
+                await cl.Message(author=naming_dict[message["role"]], content=message["content"].replace("TERMINATE", "")).send()
+            cl.user_session.set('last_seen_message_index', len(message_history))
+
+            cur_iter += 1
+            return
+    except Exception as e:
+        await cl.Message(content=f"An error occurred: {str(e)}").send()

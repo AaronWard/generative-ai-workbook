@@ -10,5 +10,5 @@ The tool has access to the path to a synthethic covid-19 dataset for example of 
 - Update UI components to separate the indentation for agent messages vs the User or final response messages.
 - Incorporate echart visualizations in the chainlit UI (is it possible?)
 
-<img src="./UI.png" style="display: block; margin-right: auto; margin-left: auto;">
+<img src="UI.png" style="display: block; margin-right: auto; margin-left: auto;">
 

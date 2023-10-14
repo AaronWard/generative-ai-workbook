@@ -150,14 +150,28 @@ async def run_conversation(user_message: str):
             message_history = assistant.chat_messages[user_proxy]
             last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
 
-            # Identify the final response
-            final_response = message_history[-1]["content"].replace("TERMINATE", "")
+            # Filter out messages with "TERMINATE"
+            message_history = [
+                message 
+                for message in message_history 
+                if not message["content"].strip().endswith("TERMINATE")
+            ]
+
+            # Check if message_history is not empty to avoid IndexError
+            if message_history:
+                # Identify the final response
+                final_response = message_history[-1]["content"]
+            else:
+                final_response = "No valid messages found." 
             
             # Loop through and display the messages, excluding the final one
             for message in message_history[last_seen_message_index:-1]:
+                if message['content'].rstrip() == "TERMINATE":
+                    break
+
                 await cl.Message(
                     author=naming_dict[message["role"]],
-                    content=message["content"].replace("TERMINATE", ""),
+                    content=message["content"],
                     indent=1 
                 ).send()
             

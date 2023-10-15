@@ -30,7 +30,8 @@ class MultiAgent():
         """
         Initialize StreamlitAgent with coding assistant and runner agents.
         """
-        self.model  = kwargs.get('model', 'gpt-3.5-turbo')
+        # self.model  = kwargs.get('model', 'gpt-3.5-turbo')
+        self.model  = kwargs.get('model', 'gpt-4')
         self.work_dir = kwargs.get('work_dir', None)
         self.temperature = kwargs.get('temperature', None)
         self.env_path = '../../.env'
@@ -84,7 +85,8 @@ class MultiAgent():
             },
             filter_dict={
                 "model": {
-                    self.model,
+                    # self.model,
+                    "gpt-4"
                 }
             }
         )

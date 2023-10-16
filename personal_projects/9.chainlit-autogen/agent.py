@@ -10,16 +10,15 @@ import time
 import shutil
 import autogen
 import logging
-import threading
 import pprint as pp
 import streamlit as st 
 import chainlit as cl
 from pathlib import Path
-import multiprocessing
+from datetime import datetime
 from multiprocessing import Process, Queue
 from autogen import AssistantAgent, UserProxyAgent
 
-logging.basicConfig(level=logging.INFO)
+import json
 
 class MultiAgent():
     """
@@ -33,7 +32,7 @@ class MultiAgent():
         # self.model  = kwargs.get('model', 'gpt-3.5-turbo')
         self.model  = kwargs.get('model', 'gpt-4')
         self.work_dir = kwargs.get('work_dir', None)
-        self.temperature = kwargs.get('temperature', None)
+        self.temperature = kwargs.get('temperature', 0.2)
         self.env_path = '../../.env'
         self.config_list = self.get_config_list()
 
@@ -127,3 +126,4 @@ class MultiAgent():
 
     def is_termination_message(self, x):
         return x.get("content", "") and x.get("content", "").rstrip().endswith("TERMINATE")
+    

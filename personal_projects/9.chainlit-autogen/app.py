@@ -4,12 +4,17 @@ using chainlit and Apache eCharts
 
 Written by: Aaron Ward - October 2023.
 """
+import json
+import autogen
 import chainlit as cl
 from pathlib import Path
+from datetime import datetime
+
 
 from agent import MultiAgent
 from data_dictionary import dictionary
 
+logs_filename = f"logs/conversations_{datetime.now().timestamp()}.json"
 output_folder = "/Users/award40/Desktop/example_output"
 # Get the path of the script
 data_relative_path = './data/synthetic_covid_dataset_20230828.csv'
@@ -19,6 +24,7 @@ data_dict_context = f"\n\nHere is the data dictionary: {dictionary.PROMPT_STRING
 termination_notice = '\n\nDo not say show appreciation in your responses, say only what is necessary. if "Thank you" or "You\'re welcome" are said in the conversation, then say TERMINATE ' \
                      'to indicate the conversation is finished and this is your last message.'
 
+TOTAL_COST = 0.0
 MAX_ITER = 100
 USER_NAME = "User"
 USER_PROXY_NAME = "Code Runner Agent"
@@ -87,6 +93,7 @@ async def setup_agent():
     cl.user_session.set('agent', agent)
     cl.user_session.set(ASSISTANT_NAME, coding_assistant)
     cl.user_session.set(USER_PROXY_NAME, coding_runner)
+    cl.user_session.set("total_cost", TOTAL_COST)
 
     await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
 
@@ -111,6 +118,11 @@ async def upload_file(files: any):
         with open(file_name, "wb") as file:
             file.write(content)
 
+def save_logs(logs_filename=logs_filename):
+    logs = autogen.ChatCompletion.logged_history
+    json.dump(logs, open(logs_filename, "w"), 
+                indent=4)
+    return logs
 
 @cl.on_message
 async def run_conversation(user_message: str):
@@ -119,6 +131,9 @@ async def run_conversation(user_message: str):
         if user_message == cl.user_session.get('user_message'):
             return
                 
+        print("Start logging...")
+        autogen.ChatCompletion.start_logging()
+
         # Get agents and append termination notice if necessary
         agent = cl.user_session.get("agent")
         assistant = cl.user_session.get(ASSISTANT_NAME)
@@ -201,5 +216,21 @@ async def run_conversation(user_message: str):
                 content="Sorry, we got lost in thought...",
                 indent=0  # No indentation
             ).send()
+
+        # Display cost logs
+        logs = save_logs()
+        conversation = next(iter(logs.values()))
+        cost = sum(conversation["cost"])
+
+        TOTAL_COST = float(cl.user_session.get("total_cost", 0))
+        cost += TOTAL_COST
+        cl.user_session.set("total_cost", cost)
+
+        cost_counter = cl.TaskList(name="Cost Counter", status="running")
+        await cost_counter.send()
+        cost_task = cl.Task(title=f"Total Cost in USD for this conversation: ${float(cl.user_session.get('total_cost', 0)):.2f}", status=cl.TaskStatus.DONE)
+        await cost_counter.add_task(cost_task)
+        await cost_counter.send()
+
     except Exception as e:
         await cl.Message(content=f"An error occurred: {str(e)}").send()

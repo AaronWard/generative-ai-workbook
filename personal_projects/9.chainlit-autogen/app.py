@@ -10,10 +10,12 @@ import chainlit as cl
 from pathlib import Path
 from datetime import datetime
 
+from dotenv import find_dotenv, load_dotenv
 
 from agent import MultiAgent
 from data_dictionary import dictionary
 
+api_id = "blue-test-9m0Qdha9NH4P"
 logs_filename = f"logs/conversations_{datetime.now().timestamp()}.json"
 output_folder = "/Users/award40/Desktop/example_output"
 # Get the path of the script
@@ -36,6 +38,10 @@ Datascience Agent Team 👾
 
 Here is the path to the data available to you: `{data_path}`
 """
+
+load_dotenv(find_dotenv())
+
+
 
 ##########################################################
 

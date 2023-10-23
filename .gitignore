@@ -11,6 +11,8 @@ __pycache__/
 **/OAI_CONFIG_LIST
 */OAI_CONFIG_LIST
 
+.chainlit/
+
 */.DS_Store
 **/chroma_db/*
 */chroma_db

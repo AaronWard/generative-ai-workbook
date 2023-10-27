@@ -1,0 +1,1 @@
+The purpose of this folder is to hold files related to functions that can be passed to an LLM to carry out a task. There are intended to be short code examples to reference to.

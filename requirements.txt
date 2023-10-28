@@ -35,6 +35,7 @@ open-interpreter # needs >= python3.10
 pyautogen
 fschat[model_worker,webui] # may downgrade tiktoken if newer version installed
 pygame
+wandb
 
 # wikipedia==1.4.0
 # youtube-transcript-api==0.6.0

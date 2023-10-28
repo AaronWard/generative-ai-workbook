@@ -7,19 +7,9 @@ metric:
   goal: maximize
 
 parameters:
-  temperature: 0.7
-  num_qa_pairs: 5 # number of questions
+  temperature:
+    values: [0.1, 0.7]
   llm:
     values:
       - gpt-4
-      - gpt-3.5-turbo
-  # prompt_template_file:
-  #   values:
-  #     - data/qa/prompt_template_1.txt
-  #     - data/qa/prompt_template_2.txt
-  # retriever:
-  #   values:
-  #     - Chroma
-  #     - TFIDFRetriever
-  #     - FAISS
-# program: qa_full_sweeps.py
+      # - gpt-3.5-turbo

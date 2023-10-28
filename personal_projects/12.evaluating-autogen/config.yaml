@@ -3,22 +3,10 @@ method: random
 
 # Metric to optimize. This is just an example, modify as per your needs.
 metric:
-  name: accuracy
+  name: f1
   goal: maximize
 
 parameters:
-  temperature:
-    min: 0.5
-    max: 1.0
-  num_qa_pairs:
-    values: [3, 5, 7, 10]
-  llm:
-    values:
-      - gpt-4
-      - gpt-3.5-turbo
-
-# Additional Parameters (Not for WandB sweep but may be used in your code)
-additional_params:
   temperature: 0.7
   num_qa_pairs: 5 # number of questions
   llm:

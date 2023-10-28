@@ -6,9 +6,6 @@ import openai
 import shutil
 import random
 import autogen
-# import tempfile
-# import chromadb
-# import evaluate
 import pandas as pd
 from typing import Any
 from pathlib import Path
@@ -85,14 +82,8 @@ def get_config(model_type):
     )
     return config_list
 
-
-def get_random_chunks(num_qa_pairs):
-    random_chunks = []
-    for i in range(num_qa_pairs):
-        random_chunks.append(random.randint(5, 172))  # (5, 172)
-
-    return random_chunks
-
+def get_random_chunks(num_qa_pairs, start=5, end=172):
+    return random.sample(range(start, end + 1), num_qa_pairs)
 
 # LLM Functions
 def instiate_agents(config_list, temperature):
@@ -289,7 +280,7 @@ def main():
     random_chunks = get_random_chunks(wandb.config.num_qa_pairs)
     
     # Filenames
-    autogen_logs_filename=f"logs_filename_{wandb.run.name}" # TODO: Where to find sweep_id in the config?
+    autogen_logs_filename=f"logs_filename_{run.name}"
 
     # Generate evaluation dataset
     pages = get_split_docs(DOC_FILE)

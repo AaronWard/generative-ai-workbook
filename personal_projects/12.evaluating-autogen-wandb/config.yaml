@@ -1,6 +1,5 @@
 name: autogen_qa_sweeps
 method: random
-dotenv_path: ../../.env
 
 # Metric to optimize. This is just an example, modify as per your needs.
 metric:
@@ -8,6 +7,8 @@ metric:
   goal: maximize
 
 parameters:
+  dotenv_path: 
+    values: ['../../.env']
   temperature:
     values: [0.1, 0.7]
   llm:

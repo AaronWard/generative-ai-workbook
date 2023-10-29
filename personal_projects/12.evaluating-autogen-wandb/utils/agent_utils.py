@@ -1,3 +1,10 @@
+"""
+This script is contains helper functions
+related to autogen. Update instiate_agents
+with the appropriate agents interaction scenario to evaluate.
+
+"""
+
 import os
 import json
 import shutil

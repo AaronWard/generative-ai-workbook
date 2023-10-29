@@ -1,5 +1,9 @@
+"""
+This contains helper functions used for
+evaluating the autogen output vs the expected
+answer.
 
-
+"""
 from langchain.llms import OpenAI
 from langchain.evaluation.qa import QAEvalChain
 

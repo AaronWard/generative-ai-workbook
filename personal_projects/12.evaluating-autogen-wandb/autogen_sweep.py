@@ -2,27 +2,16 @@
 Script for evaluating how well autogen agents
 can carry out tasks given different hyperparameters
 
-to kill the process:
+NOTE: to kill the wandb process:
 >  pkill wandb-service
 
 """
-import os
-import sys
-import json
-import yaml
-import openai
-import shutil
-import random
-import autogen
 import functools
 import pprint as pp
-import pandas as pd
-from tqdm import tqdm
-from typing import Any
 from pathlib import Path
 
 import wandb
-import autogen
+import openai
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -30,7 +19,6 @@ PROJECT_NAME = "wandb-autogen"
 DOC_FILE = "documents/2308.08155.pdf"
 
 # Helper functions
-
 from utils.misc_utils import load_sweep_config
 from utils.qa_generation_utils import generate_eval_dataset
 from utils.agent_utils import (get_config, instiate_agents, get_qa_response)
@@ -38,35 +26,21 @@ from utils.eval_utils import (run_evaluation_chain, modify_qa_pairs, get_precisi
 
 ################################################################################
 
-def objective(config, qa_pairs, autogen_logs_filename):
-    """
-    Define the objective function to optimize.
-    Computes a metric based on the provided configuration.
-    
-    Parameters:
-    - config (Any): Configuration parameters for the model
-    
-    Returns:
-    - 
-    """
-    model_type = config.llm
-    temperature = config.temperature
+def objective(config: dict, qa_pairs: list, autogen_logs_filename: str) -> (float, float):
+    """Define the objective function to optimize."""
+    model_type = config['llm']
+    temperature = config['temperature']
 
     # 1. Set up Agent
-    config_list = get_config(model_type, config.dotenv_path)
+    config_list = get_config(model_type, config['dotenv_path'])
     assistant, user_proxy = instiate_agents(config_list, temperature)
     
-    # 2. test output of autogen agents and get costs
-    predictions = []
-    costs = []
+    # 2. Test output of autogen agents and get costs
+    predictions, costs = [], []
     for qa_pair in qa_pairs:
+        print(qa_pair)
         question = qa_pair["question"]
-        response, cost = get_qa_response(model_type,
-                                        user_proxy, 
-                                        assistant, 
-                                        question, 
-                                        config_list,
-                                        autogen_logs_filename)
+        response, cost = get_qa_response(model_type, user_proxy, assistant, question, config_list, autogen_logs_filename)
         costs.append(float(cost))
         predictions.append({"response": response})
     cost = round(float(sum(costs)), 3)
@@ -74,24 +48,17 @@ def objective(config, qa_pairs, autogen_logs_filename):
     # 3. Evaluate and calculate performance metric
     graded_outputs = run_evaluation_chain(qa_pairs, predictions)
     score = float(get_precision_score(graded_outputs))
-
-    # modified_qa_pairs = modify_qa_pairs(qa_pairs, predictions)
-    
+    # modified_qa_pairs = modify_qa_pairs(qa_pairs, predictions)    
     return score, cost
 
 
-
-def main(qa_pairs, config, sweep_id):
-    """
-    Main function to initialize wandb and log the results.
-
-    """
+def main(qa_pairs: list, config: dict, sweep_id: str):
+    """Main function to initialize wandb and log the results."""
     wandb.require("service")
     with wandb.init(config=config):
         pp.pprint(wandb.config)
         config = wandb.config
-        autogen_logs_filename=f"./autogen_logs/logs_filename_{sweep_id}"
-        print(autogen_logs_filename)
+        autogen_logs_filename = f"./autogen_logs/logs_filename_{sweep_id}"
 
         # Get the score from the objective function
         score, cost = objective(config, qa_pairs, autogen_logs_filename)
@@ -100,7 +67,7 @@ def main(qa_pairs, config, sweep_id):
             "score": score, 
             "cost": cost
         })
-
+        wandb.finish()
 
 if __name__ == "__main__":
     sweep_configuration = load_sweep_config()
@@ -112,11 +79,16 @@ if __name__ == "__main__":
 
     # 0. Create an evaluation dataset
     print('Generating eval dataset...')
-    qa_pairs = generate_eval_dataset(DOC_FILE, chunk_size=1000, num_qa_pairs = 10)
+    qa_pairs = generate_eval_dataset(
+                            doc_file=DOC_FILE, 
+                            chunk_size=1000, 
+                            num_qa_pairs = 10, 
+                            save_to_file=True
+
+                        )
 
     print('Initializing W&B Sweep...')
     sweep_id = wandb.sweep(sweep=sweep_configuration, project=PROJECT_NAME)
     main_func = functools.partial(main, qa_pairs, sweep_configuration, sweep_id)
     wandb.agent(sweep_id, function=main_func, count=5)
     
-    wandb.finish()

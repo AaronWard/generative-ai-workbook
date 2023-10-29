@@ -1,0 +1,70 @@
+wandb_version: 1
+
+llm:
+  desc: null
+  value: gpt-4
+temperature:
+  desc: null
+  value: 0.1
+name:
+  desc: null
+  value: autogen_qa_sweeps
+method:
+  desc: null
+  value: random
+dotenv_path:
+  desc: null
+  value: ../../.env
+metric:
+  desc: null
+  value:
+    name: score
+    goal: maximize
+parameters:
+  desc: null
+  value:
+    temperature:
+      values:
+      - 0.1
+      - 0.7
+    llm:
+      values:
+      - gpt-4
+      - gpt-3.5-turbo
+_wandb:
+  desc: null
+  value:
+    python_version: 3.10.12
+    cli_version: 0.15.12
+    framework: sklearn
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1698598577.54315
+    t:
+      1:
+      - 5
+      - 35
+      - 53
+      - 55
+      - 86
+      - 95
+      - 105
+      2:
+      - 5
+      - 35
+      - 53
+      - 55
+      - 86
+      - 95
+      - 105
+      3:
+      - 2
+      - 16
+      - 23
+      - 37
+      4: 3.10.12
+      5: 0.15.12
+      8:
+      - 4
+      - 5
+      13: darwin-arm64

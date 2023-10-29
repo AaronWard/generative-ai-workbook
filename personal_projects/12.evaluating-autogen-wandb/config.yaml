@@ -1,0 +1,16 @@
+name: autogen_qa_sweeps
+method: random
+dotenv_path: ../../.env
+
+# Metric to optimize. This is just an example, modify as per your needs.
+metric:
+  name: score
+  goal: maximize
+
+parameters:
+  temperature:
+    values: [0.1, 0.7]
+  llm:
+    values:
+      - gpt-4
+      - gpt-3.5-turbo

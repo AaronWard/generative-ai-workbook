@@ -1,0 +1,6 @@
+wandb_version: 1
+
+llm:
+  value: gpt-4
+temperature:
+  value: 0.7

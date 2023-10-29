@@ -11,6 +11,14 @@ __pycache__/
 **/OAI_CONFIG_LIST
 */OAI_CONFIG_LIST
 
+
+**/wandb/
+*/wandb/
+
+**/.vscode/
+*/.vscode/
+.vscode/
+
 .chainlit/
 
 */.DS_Store

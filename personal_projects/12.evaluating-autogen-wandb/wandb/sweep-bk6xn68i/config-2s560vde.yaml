@@ -1,6 +1,0 @@
-wandb_version: 1
-
-llm:
-  value: gpt-3.5-turbo
-temperature:
-  value: 0.1

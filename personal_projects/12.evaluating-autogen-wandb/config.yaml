@@ -3,14 +3,14 @@ method: random
 
 # Metric to optimize. This is just an example, modify as per your needs.
 metric:
-  name: score
+  name: f1
   goal: maximize
 
 parameters:
   dotenv_path: 
     values: ['../../.env']
   temperature:
-    values: [0.1, 0.7]
+    values: [0.1, 0.5, 0.7]
   llm:
     values:
       - gpt-4

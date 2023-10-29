@@ -6,19 +6,15 @@ answer.
 """
 from langchain.llms import OpenAI
 from langchain.evaluation.qa import QAEvalChain
-
+from evaluate import load
 
 def run_evaluation_chain(qa_pairs, predictions):
     eval_chain = QAEvalChain.from_llm(llm = OpenAI(temperature=0))
-    graded_outputs = eval_chain.evaluate(
+    return eval_chain.evaluate(
         qa_pairs, predictions, question_key="question", prediction_key="response"
     )
 
-    return graded_outputs
-
-
 def modify_qa_pairs(qa_pairs, predictions):
-
     # Some data munging to get the examples in the right format
     modified_qa_pairs = [x.copy() for x in qa_pairs]
     for i, eg in enumerate(modified_qa_pairs):
@@ -37,6 +33,16 @@ def modify_qa_pairs(qa_pairs, predictions):
     return modified_qa_pairs
 
 def get_precision_score(graded_outputs):
+    correct = 0
+    for graded_output in graded_outputs:
+        if graded_output["results"].strip() == "CORRECT":
+            correct += 1
+
+
+    return correct/len(graded_outputs)
+
+
+def get_squad_score(modified_qa_pairs, predictions):
     """
     https://rajpurkar.github.io/SQuAD-explorer/
 
@@ -49,11 +55,9 @@ def get_precision_score(graded_outputs):
         in the prediction. Recall is the ratio of shared tokens to the 
         total number of tokens in the ground truth.
     """
+    squad_metric = load("squad")
 
-    correct = 0
-    for graded_output in graded_outputs:
-        if graded_output["results"].strip() == "CORRECT":
-            correct += 1
-
-
-    return correct/len(graded_outputs)
+    return squad_metric.compute(
+        references=[modified_qa_pairs[1]],
+        predictions=[predictions[1]],
+    )

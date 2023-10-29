@@ -1,6 +1,5 @@
 '''
 Misc utility functions
-
 '''
 import yaml
 

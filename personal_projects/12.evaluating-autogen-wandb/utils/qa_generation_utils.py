@@ -19,7 +19,7 @@ def _pick_random_chunks(num_qa_pairs: int, max_index: int) -> list:
     """Pick N random sections of split documents to generate questions from."""
     return random.sample(range(0, max_index + 1), num_qa_pairs)
 
-def _split_document_into_chunks(doc_file: str, chunk_size: int = 3000, chunk_overlap: int = 100) -> list:
+def _split_document_into_chunks(doc_file: str, chunk_size: int = 3000, chunk_overlap: int = 250) -> list:
     """Split the document into equal-sized chunks."""
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
                                                    chunk_overlap=chunk_overlap, 
@@ -75,21 +75,20 @@ def generate_eval_dataset(doc_file, chunk_size=1000, num_qa_pairs = 10,  save_to
 
     # Generate questions based on random sections of the documents
     # max_index represents the range from which to generate random indices
-    random_chunks = _pick_random_chunks(num_qa_pairs=2, max_index=len(split_docs))
+    random_chunks = _pick_random_chunks(num_qa_pairs=num_qa_pairs, max_index=len(split_docs))
     print(f"Random Chunks: {random_chunks}")
     
     # Generate evaluation dataset
-    qa_pairs = [qa_chain.run(doc.page_content) for idx, doc in enumerate(split_docs) if idx in random_chunks]
+    qa_pairs = [item for idx, doc in enumerate(split_docs) if idx in random_chunks for item in qa_chain.run(doc.page_content)]
 
-    # qa_df = pd.DataFrame(qa_pairs)
-    # qa_df['0'] = qa_df['0'].apply(eval)
-    # qa_df = qa_df['0'].apply(pd.Series)
-    # print(qa_df.head(5))
+    # Convert the list of dictionaries into a DataFrame
+    qa_df = pd.DataFrame(qa_pairs)
+    print(qa_df.head(5))
 
-    # if save_to_file:
-    #     current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    #     filename = f"./gen_qa_{current_time}.csv"
-    #     qa_df.to_csv(filename, index=False)
-    #     print(f"Saved QA pairs to {filename}")
+    if save_to_file:
+        current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"./gen_qa_{current_time}.csv"
+        qa_df.to_csv(filename, index=False)
+        print(f"Saved QA pairs to {filename}")
         
     return qa_pairs

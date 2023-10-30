@@ -36,6 +36,7 @@ pyautogen
 fschat[model_worker,webui] # may downgrade tiktoken if newer version installed
 pygame
 wandb
+sentence_transformers
 
 # wikipedia==1.4.0
 # youtube-transcript-api==0.6.0

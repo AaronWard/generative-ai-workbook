@@ -1,0 +1,58 @@
+{
+    "[{\"content\": \"\", \"role\": \"system\"}, {\"content\": \"What is the first instruction based on the plan and the history of instructions executed so far?\\n\\nDo not show appreciation in your responses, say only what is necessary. if \\\"Thank you\\\" or \\\"You're welcome\\\" are said in the conversation, then say TERMINATE to indicate the conversation is finished and this is your last message.\", \"role\": \"assistant\"}, {\"content\": \"I'm sorry, but I don't have access to the plan or the history of instructions executed so far. Could you please provide more information or context?\", \"role\": \"user\"}, {\"content\": \"Apologies for the confusion. In the absence of specific instructions or context, the first instruction would typically be to gather information or clarify the task at hand. Please provide more details or specify the specific task you would like assistance with.\", \"role\": \"assistant\"}, {\"content\": \"Understood. To proceed, please provide more details or specify the specific task you would like assistance with.\", \"role\": \"user\"}, {\"content\": \"Thank you for your understanding. To proceed, please provide more details or specify the specific task you would like assistance with.\", \"role\": \"assistant\"}]": {
+        "created_at": [
+            1,
+            3
+        ],
+        "cost": [
+            0.00026000000000000003,
+            0.0003285
+        ],
+        "token_count": [
+            {
+                "model": "gpt-3.5-turbo-0613",
+                "prompt_tokens": 112,
+                "completion_tokens": 46,
+                "total_tokens": 158
+            },
+            {
+                "model": "gpt-3.5-turbo-0613",
+                "prompt_tokens": 187,
+                "completion_tokens": 24,
+                "total_tokens": 211
+            }
+        ]
+    },
+    "[{\"content\": \"You are an intelligent assistant chatbot that replies with the correct answer. Reply `TERMINATE` in the end when everything is done.\", \"role\": \"system\"}, {\"content\": \"What is the first instruction based on the plan and the history of instructions executed so far?\\n\\nDo not show appreciation in your responses, say only what is necessary. if \\\"Thank you\\\" or \\\"You're welcome\\\" are said in the conversation, then say TERMINATE to indicate the conversation is finished and this is your last message.\", \"role\": \"user\"}, {\"content\": \"I'm sorry, but I don't have access to the plan or the history of instructions executed so far. Could you please provide more information or context?\", \"role\": \"assistant\"}, {\"content\": \"Apologies for the confusion. In the absence of specific instructions or context, the first instruction would typically be to gather information or clarify the task at hand. Please provide more details or specify the specific task you would like assistance with.\", \"role\": \"user\"}, {\"content\": \"Understood. To proceed, please provide more details or specify the specific task you would like assistance with.\", \"role\": \"assistant\"}, {\"content\": \"Thank you for your understanding. To proceed, please provide more details or specify the specific task you would like assistance with.\", \"role\": \"user\"}, {\"content\": \"TERMINATE\", \"role\": \"assistant\"}]": {
+        "created_at": [
+            0,
+            2,
+            4
+        ],
+        "cost": [
+            0.0002195,
+            0.00032700000000000003,
+            0.0003705
+        ],
+        "token_count": [
+            {
+                "model": "gpt-3.5-turbo-0613",
+                "prompt_tokens": 105,
+                "completion_tokens": 31,
+                "total_tokens": 136
+            },
+            {
+                "model": "gpt-3.5-turbo-0613",
+                "prompt_tokens": 190,
+                "completion_tokens": 21,
+                "total_tokens": 211
+            },
+            {
+                "model": "gpt-3.5-turbo-0613",
+                "prompt_tokens": 243,
+                "completion_tokens": 3,
+                "total_tokens": 246
+            }
+        ]
+    }
+}

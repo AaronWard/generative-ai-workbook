@@ -5,6 +5,7 @@ questions from. There is also a function for using an LLM
 to create an evaluation dataset for us.
 
 """
+import os
 import random
 import datetime
 import pandas as pd
@@ -86,8 +87,11 @@ def generate_eval_dataset(doc_file, chunk_size=1000, num_qa_pairs = 10,  save_to
     print(qa_df.head(5))
 
     if save_to_file:
+        if not os.path.exists("./eval_data/"):
+            os.makedirs("./eval_data/")
+
         current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"./gen_qa_{current_time}.csv"
+        filename = f"./eval_data/gen_qa_{current_time}.csv"
         qa_df.to_csv(filename, index=False)
         print(f"Saved QA pairs to {filename}")
         

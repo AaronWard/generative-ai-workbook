@@ -21,7 +21,7 @@ DOC_FILE = "documents/2308.08155.pdf"
 # Helper functions
 from utils.misc_utils import load_sweep_config
 from utils.qa_generation_utils import generate_eval_dataset
-from utils.agent_utils import (get_config, instiate_agents, get_qa_response)
+from utils.agent_utils import (get_config, instantiate_agents, get_qa_response)
 from utils.eval_utils import (run_evaluation_chain, modify_qa_pairs, get_precision_score, get_squad_score)
 
 ################################################################################
@@ -33,17 +33,18 @@ def objective(config: dict, qa_pairs: list, autogen_logs_filename: str) -> (floa
 
     # 1. Set up Agent
     config_list = get_config(model_type, config['dotenv_path'])
-    assistant, user_proxy = instiate_agents(config_list, temperature)
+    agents = instantiate_agents(config_list, temperature)
     
     # 2. Test output of autogen agents and get costs
     predictions, costs = [], []
     for qa_pair in qa_pairs:
         print(qa_pair)
         question = qa_pair["question"]
-        response, cost = get_qa_response(model_type, user_proxy, assistant, question, config_list, autogen_logs_filename)
+        response, cost = get_qa_response(model_type, agents, question, 
+                                         config_list, autogen_logs_filename)
         costs.append(float(cost))
         predictions.append({"response": response})
-    cost = round(float(sum(costs)), 3)
+    cost = round(float(sum(costs)), 5)
 
     # 3. Evaluate and calculate performance metric
     graded_outputs = run_evaluation_chain(qa_pairs, predictions)

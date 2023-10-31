@@ -14,12 +14,7 @@ import openai
 load_dotenv()
 
 assert os.environ.get("OPENAI_API_KEY")
-
-# get openai api key
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-
-# ------------------ helpers ------------------
-
 
 def safe_get(data, dot_chained_keys):
     """

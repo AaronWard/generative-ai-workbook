@@ -41,7 +41,7 @@ def main():
 
         # call db_manager.get_table_definition_for_prompt () to get tables in prompt ready form
 
-        # create two blank calls to 1lm.add_cap_ref() that update our current prompt passed in from cli
+        # create two blank calls to llm.add_cap_ref() that update our current prompt passed in from cli
 
         # call llm.prompt to get a prompt_response variable
 

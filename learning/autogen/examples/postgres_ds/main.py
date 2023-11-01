@@ -32,6 +32,7 @@ def main():
     # connect to db using with statement and create a db_manager
     with PostgresManager() as db:
         db.connect_with_url(DB_URL)
+        # users_table = db.try_query()
         users_table = db.get_all(table_name="patients")
         print("users_table", users_table)
 

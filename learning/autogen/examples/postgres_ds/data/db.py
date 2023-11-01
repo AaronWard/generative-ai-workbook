@@ -56,16 +56,14 @@ class PostgresManager:
         return self.cur.fetchone()
 
     def get_all(self, table_name):
-        select_all_stmt = SQL("SELECT * FROM {}").format(Identifier(table_name.lower()))
-        print("Executing SQL:", select_all_stmt.as_string(self.conn))
-
+        select_all_stmt = SQL("SELECT * FROM {}").format(Identifier(table_name))
         self.cur.execute(select_all_stmt)        
         return self.cur.fetchall()
 
+    ######
     def try_query(self):
         self.cur.execute("SELECT * FROM public.patients LIMIT 5;")
         return self.cur.fetchall()
-
 
     def run_sql(self, sql):
         self.cur.execute(sql)
@@ -86,10 +84,20 @@ class PostgresManager:
         self.cur.execute(get_def_stmt, (table_name, ))
         rows = self.cur.fetchall()
         
-        create_table_stmt = "CREATE TABLE {} \n".format(table_name)
+        create_table_stmt = "CREATE TABLE {} (\n".format(table_name)
         for row in rows:
-            create_table_stmt += "{} {} , \n".format(row[2], row[3])
+            create_table_stmt += "  {} {} ,\n".format(row[2], row[3])
         
-        create_table_stmt = create_table_stmt.rstrip(", \n") + ");"
+        create_table_stmt = create_table_stmt.rstrip(",\n") + "\n);"
         
         return create_table_stmt
+
+    def get_all_table_names(self):
+        self.cur.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+        return [row[0] for row in self.cur.fetchall()]
+
+    def get_table_definitions_for_prompt(self):
+        table_names = self.get_all_table_names()
+        definitions = [self.get_table_definition(table_name) for table_name in table_names]
+        return "\n\n".join(definitions)
+

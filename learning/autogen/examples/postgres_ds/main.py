@@ -11,7 +11,7 @@ import argparse
 # sys.path.append('./') 
 dotenv.load_dotenv()
 
-from agents import ad #(safe_get, response_parser, prompt, add_cap_ref)  
+from agents import llm #(safe_get, response_parser, prompt, add_cap_ref)  
 # from .api import *
 # from .config import *
 # from .data.dictionaries import *
@@ -43,11 +43,11 @@ def main():
         table_definitions = db.get_table_definitions_for_prompt()
 
         # create two blank calls to llm.add_cap_ref() that update our current prompt passed in from cli
-        prompt = ad.add_cap_ref(args.prompt, "Here are the table definitions:", "TABLE_DEFINITIONS", table_definitions)
-        prompt = ad.add_cap_ref(prompt, "Please provide a SQL query based on these definitions.", "SQL_QUERY", "")
+        prompt = llm.add_cap_ref(args.prompt, "Here are the table definitions:", "TABLE_DEFINITIONS", table_definitions)
+        prompt = llm.add_cap_ref(prompt, "Please provide a SQL query based on these definitions.", "SQL_QUERY", "")
 
         # call llm.prompt to get a prompt_response variable
-        prompt_response = ad.prompt(prompt)
+        prompt_response = llm.prompt(prompt)
 
         # parse sql response from prompt_response using SQL_QUERY_DELIMITER '---------'
         sql_query = prompt_response.split('---------')[1].strip()
@@ -59,6 +59,7 @@ def main():
 import os
 
 if __name__ == "__main__":
-    with open(os.path.join(os.path.dirname(__file__), 'prompt_templates', 'test_prompt.txt'), 'r') as file:
+    with open(os.path.join(os.path.dirname(__file__), 
+                           'prompt_templates', 'test_prompt.txt'), 'r') as file:
         prompt = file.read().strip()
     main(prompt)

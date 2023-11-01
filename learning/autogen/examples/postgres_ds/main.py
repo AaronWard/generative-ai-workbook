@@ -56,5 +56,9 @@ def main():
         result = db.run_sql(sql_query)
         print("Result:", result)
 
+import os
+
 if __name__ == "__main__":
-    main()
+    with open(os.path.join(os.path.dirname(__file__), 'prompt_templates', 'test_prompt.txt'), 'r') as file:
+        prompt = file.read().strip()
+    main(prompt)

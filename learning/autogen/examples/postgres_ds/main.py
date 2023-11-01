@@ -40,15 +40,21 @@ def main():
         print("users_table", users_table)
 
     # call db_manager.get_table_definition_for_prompt () to get tables in prompt ready form
+    table_definitions = db.get_table_definitions_for_prompt()
 
     # create two blank calls to 1lm.add_cap_ref() that update our current prompt passed in from cli
+    prompt = ad.add_cap_ref(args.prompt, "Please provide the SQL query for the following table definitions:", "TABLE DEFINITIONS", table_definitions)
+    prompt = ad.add_cap_ref(prompt, "Please provide the SQL query for the following table definitions:", "TABLE DEFINITIONS", table_definitions)
 
     # call llm.prompt to get a prompt_ response variable
+    prompt_response = ad.prompt(prompt)
 
     # parse sql response from prompt_response using SQL_QUERY_DELIMITER '---------'
+    sql_query = prompt_response.split('---------')[1].strip()
 
     # call db_manager. run_sql() with the parsed sql
-    pass
+    result = db.run_sql(sql_query)
+    print(result)
 
 if __name__ == "__main__":
     main()

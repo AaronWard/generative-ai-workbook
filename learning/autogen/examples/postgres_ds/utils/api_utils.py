@@ -1,25 +1,47 @@
 """
-Purpose:
-    Interact with the OpenAI API.
-    Provide supporting prompt engineering functions.
-"""
+Utility functions for API calls
 
-import sys
-from dotenv import load_dotenv
+"""
 import os
-from typing import Any, Dict
+import sys
 import openai
+import requests
+from dotenv import load_dotenv
+from typing import Any, Dict
 
 # load .env file
 load_dotenv()
 
 assert os.environ.get("OPENAI_API_KEY")
-
-# get openai api key
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-# ------------------ helpers ------------------
+def get_available_models():
+    """
+    This function is for listing out all the
+    available models under the API key provided.  
+    
+    """
+    try:
+        response = requests.get(
+            "https://api.openai.com/v1/models",
+            headers={"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"}
+        )
+        if response.status_code == 200:
+            models = response.json()['data']
+            return [model['id'] for model in models]
+        else:
+            print("Error in getting available models: HTTP status code", response.status_code)
+            return []
+    except Exception as e:
+        print("Error in getting available models:", str(e))
+        return []
 
+
+"""
+Purpose:
+    Interact with the OpenAI API.
+    Provide supporting prompt engineering functions.
+"""
 
 def safe_get(data, dot_chained_keys):
     """
@@ -84,3 +106,5 @@ def add_cap_ref(
     new_prompt = f"""{prompt} {prompt_suffix}\n\n{cap_ref}\n\n{cap_ref_content}"""
 
     return new_prompt
+
+

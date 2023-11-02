@@ -25,6 +25,7 @@ You can copy your own csv data into the db.
 > \COPY patients FROM 'path/file.csv' DELIMITER ',' CSV HEADER;
 
 ```
+
 Put this in your `.env` file: 
 
 ```
@@ -35,6 +36,8 @@ POSTGRES_CONNECTION_URL=postgresql://<user>:<password>@localhost:5432/<db_name>
 #### How restart postgres:
 ```bash
 brew services restart postgresql@16
+psql -U postgres -d testdb -h localhost -p 5432
+
 ```
 
 **Fix double instance issue**:

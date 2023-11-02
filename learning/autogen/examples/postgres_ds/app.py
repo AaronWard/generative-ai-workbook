@@ -11,32 +11,36 @@ from pathlib import Path
 from datetime import datetime
 
 from dotenv import find_dotenv, load_dotenv
+from agents.db_agent import DBAgent
 
-from .agents import MultiAgent
-from .data_dictionaries import dictionary
-
-logs_filename = f"_logs/conversations_{datetime.now().timestamp()}.json"
-output_folder = "/Users/award40/Desktop/example_output"
-# Get the path of the script
-# data_relative_path = './data/synthetic_covid_dataset_20230828.csv'
-# data_path = str(Path(__file__).absolute().parent.joinpath(data_relative_path).resolve())
-data_loc_context = f"\n\nHere is the path to data that you should import: {data_path}"
-data_dict_context = f"\n\nHere is the data dictionary: {dictionary.PROMPT_STRING}"
-
+output_folder = "_output/"
+logs_filename = f"{output_folder}/_logs/conversations_{datetime.now().timestamp()}.json"
 
 TOTAL_COST = 0.0
 MAX_ITER = 100
 USER_NAME = "User"
-USER_PROXY_NAME = "Code Runner Agent"
-ASSISTANT_NAME = "Programmer Agent"
+USER_PROXY_NAME = "User Proxy"
+ASSISTANT_NAME = "Data Engineer"
 WELCOME_MESSAGE = f"""
 BLUE 👾
 \n\n
 """
 
+# PROBLEM_TYPE = "COMPLEX"
+PROBLEM_TYPE = "SIMPLE"
+
 load_dotenv(find_dotenv())
 
 ##########################################################
+
+# TODO: Make dynamic agent assigning capability, which will allow the agents to be picked dynamically
+# into "tiger teams" to achieve a given task.
+# TODO: Incorporate orchestration of groupchat conversations
+# TODO: Intergrate multiple facets of direction: RAG, Database search
+# TODO: Finish @cl.on_settings_update to set default configurations 
+# TODO: make function for getting table definitions, and stuff into system message.
+ 
+
 
 @cl.on_settings_update
 async def setup_agent(settings):
@@ -60,12 +64,12 @@ async def setup_agent():
     print(settings)
 
     # Initialize Agents
-    agent = MultiAgent(work_dir=output_folder,
-                       temperature=settings['Temperature'],
-                       model=settings["Model"]
-                    )
+    agent = DBAgent(
+        work_dir=output_folder,
+        temperature=settings['Temperature'],
+        model=settings["Model"]
+    )
     agent.clear_history()
-    coding_assistant, coding_runner = agent.instiate_agents()
 
     # UI Configuirations
     await cl.Avatar(
@@ -88,10 +92,18 @@ async def setup_agent():
         url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Dusty&backgroundColor=ffb300",  # Change this to the desired avatar URL
     ).send()
 
+    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ")
+    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")
+    two_way_secondary_agent_name = agent.two_way_secondary_agent.name.replace("_", " ")
+    two_way_user_proxy_name = agent.two_way_user_proxy.name.replace("_", " ")
+
+
     # Setting user session variables
     cl.user_session.set('agent', agent)
-    cl.user_session.set(ASSISTANT_NAME, coding_assistant)
-    cl.user_session.set(USER_PROXY_NAME, coding_runner)
+    # cl.user_session.set(groupchat_secondary_agent_name, agent.groupchat_secondary_agent)
+    # cl.user_session.set(groupchat_user_proxy_name, agent.groupchat_user_proxy)
+    cl.user_session.set(two_way_secondary_agent_name, agent.two_way_secondary_agent)
+    cl.user_session.set(two_way_user_proxy_name, agent.two_way_user_proxy)    
     cl.user_session.set("total_cost", TOTAL_COST)
 
     await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
@@ -130,35 +142,41 @@ async def run_conversation(user_message: str):
         if user_message == cl.user_session.get('user_message'):
             return
                 
-        print("Start logging...")
-        autogen.ChatCompletion.start_logging()
-
         # Get agents and append termination notice if necessary
         agent = cl.user_session.get("agent")
-        assistant = cl.user_session.get(ASSISTANT_NAME)
-        user_proxy = cl.user_session.get(USER_PROXY_NAME)
+        # assistant = cl.user_session.get(ASSISTANT_NAME)
+        # user_proxy = cl.user_session.get(USER_PROXY_NAME)
 
-        assistant_model_type = assistant.llm_config['config_list'][0]['model']   # Assuming single model in config list
-        user_proxy_model_type = user_proxy.llm_config['config_list'][0]['model'] 
 
-        # Context injection for alignment  
-        user_message += data_loc_context + data_dict_context
-        if assistant_model_type == "gpt-3.5-turbo" or user_proxy_model_type == "gpt-3.5-turbo":
-            user_message += termination_notice
-        
         # Variables for conversation loop
         cur_iter = 0
         final_response = None  
+
+        # TODO: Making this naming dict dynamic 
+        # depending on what approach was chosen.
         naming_dict = {
             "User": "You",
-            "user": USER_PROXY_NAME,
-            "assistant": ASSISTANT_NAME,
+            "User_Proxy": USER_PROXY_NAME,
+            "Data_Engineer": ASSISTANT_NAME,
         }
 
+        # TODO: Replace this LLM logic to decide the complexity
+        # to act as a router for the different interactions
+        if PROBLEM_TYPE == "COMPLEX":
+            assistant = agent.groupchat_secondary_agent
+            user_proxy = agent.groupchat_user_proxy
+        elif PROBLEM_TYPE == "SIMPLE":
+            assistant = agent.two_way_secondary_agent
+            user_proxy = agent.two_way_user_proxy
+
+        print("Start logging...")
+        autogen.ChatCompletion.start_logging()
         if len(assistant.chat_messages[user_proxy]) == 0:
-            user_proxy.initiate_chat(assistant, message=user_message, config_list=agent.config_list)
+            agent.run(problem_type=PROBLEM_TYPE, prompt=user_message)
         else:
-            user_proxy.send(recipient=assistant, message=user_message)
+            agent._continue(problem_type=PROBLEM_TYPE, prompt=user_message)
+        # autogen.ChatCompletion.stop_logging()
+
 
         while cur_iter < MAX_ITER:            
             original_message_history = assistant.chat_messages[user_proxy]
@@ -168,6 +186,7 @@ async def run_conversation(user_message: str):
             # Filter and modify messages with "TERMINATE"
             message_history = []
             for message in original_message_history:
+                print(message)
                 stripped_content = message["content"].strip()
                 if stripped_content != "TERMINATE":
                     if stripped_content.endswith("TERMINATE"):
@@ -232,4 +251,6 @@ async def run_conversation(user_message: str):
         await cost_counter.send()
 
     except Exception as e:
-        await cl.Message(content=f"An error occurred: {str(e)}").send()
+        error_msg = f"An error occurred: {str(e)}"
+        raise ValueError(error_msg)
+        await cl.Message(content=error_msg).send()

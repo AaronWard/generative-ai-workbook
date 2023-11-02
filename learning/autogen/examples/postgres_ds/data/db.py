@@ -6,8 +6,14 @@ with a postgresql database
 import psycopg2
 from psycopg2.sql import SQL, Identifier
 
-
 class PostgresManager:
+    """
+    This is a python interface to a postgesql database.
+    Connections can be made given a database connection 
+    string in a .env file:
+    eg: postgresql://<user>:<password>@localhost:5432/<db_name>
+    
+    """
     def __init__(self):
         self.conn = None
         self.cur = None
@@ -86,7 +92,7 @@ class PostgresManager:
         
         create_table_stmt = "CREATE TABLE {} (\n".format(table_name)
         for row in rows:
-            create_table_stmt += "  {} {} ,\n".format(row[2], row[3])
+            create_table_stmt += "{} {} ,\n".format(row[2], row[3])
         
         create_table_stmt = create_table_stmt.rstrip(",\n") + "\n);"
         

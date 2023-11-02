@@ -37,7 +37,9 @@ POSTGRES_CONNECTION_URL=postgresql://<user>:<password>@localhost:5432/<db_name>
 ```bash
 brew services restart postgresql@16
 psql -U postgres -d testdb -h localhost -p 5432
+/opt/homebrew/opt/postgresql@16/bin/psql -U postgres -d testdb -h localhost -p 5432
 
+/opt/homebrew/opt/postgresql@16/bin/pg_ctl -D /opt/homebrew/var/postgresql@16 start
 ```
 
 **Fix double instance issue**:

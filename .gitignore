@@ -21,6 +21,9 @@ __pycache__/
 
 .chainlit/
 
+*/_logs/
+**/_logs/
+
 */.DS_Store
 **/chroma_db/*
 */chroma_db

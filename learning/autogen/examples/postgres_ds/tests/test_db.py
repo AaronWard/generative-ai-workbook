@@ -1,19 +1,17 @@
 """
-Unit tests for the postgres manager class.
+Unit tests for the PostgresManager class.
 
+Written by: Aaron Ward - 2nd November 2023
 """
 import pytest
 import os
 import sys
 import dotenv
 import psycopg2
-
 sys.path.append('../')
-
 from data.db import PostgresManager
 
 dotenv.load_dotenv()
-
 DB_URL = os.environ.get("POSTGRES_CONNECTION_URL")
 
 @pytest.fixture

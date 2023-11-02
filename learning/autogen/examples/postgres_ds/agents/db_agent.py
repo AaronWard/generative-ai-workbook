@@ -4,7 +4,7 @@ This class contains code for setting up a conversation initialization
 with agents. It includes the use of Autogens Assistant agent for writing
 code and User Proxy agent for executing actions.
 
-Written by: Aaron Ward - October 2023
+Written by: Aaron Ward - 2nd November 2023
 """
 import os
 import sys
@@ -62,7 +62,7 @@ class DBAgent(AgentBase):
         return {
             "request_timeout": 1000,
             "seed": 42,
-            "use_cache": False, # 
+            # "use_cache": False, # 
             "config_list": self.config_list,
             "temperature": self.temperature,
             "functions": [
@@ -86,14 +86,14 @@ class DBAgent(AgentBase):
     def get_system_messages(self):
         """
         Get system messages for different agent roles.
-
+        TODO: Move this out to it's own location as the application grows
         Returns:
             dict: A dictionary of system messages.
         """
         system_messages = {
             "Senior_Data_Analyst": 
                 "Senior Data Analyst. You follow an approval plan. You run the SQL query. Generate the final response and send it to the Product Manager for review.",
-            "Admin" : 
+            "Admin": 
                 "A human admin. Interact with the Product Manager to discuss the plan. Plan execution needs to be approved by this admin.",
             "Data_Engineer": 
                 "Data Engineer. You follow an approval plan. Think about and generate SQL based on the requirements provided. Send it out for review.",
@@ -216,16 +216,16 @@ class DBAgent(AgentBase):
                 raise ValueError(f"Error occurred initiating the agents {self.two_way_user_proxy}, {self.two_way_secondary_agent} -  problem type: {problem_type}")
             self.two_way_user_proxy.initiate_chat(self.two_way_secondary_agent, message=prompt, clear_history=False, config_list=self.config_list)
 
-    def _continue(self, prompt):
+    def _continue(self, problem_type, prompt):
         """Continue previous chat"""
         prompt = self.stuff_context(prompt)
 
         if problem_type == "COMPLEX":
             if not self.groupchat_user_proxy or not self.groupchat_secondary_agent:
                 raise ValueError(f"Error occurred initiating the agents {self.groupchat_user_proxy}, {self.groupchat_secondary_agent} -  problem type: {problem_type}")
-            self.groupchat_user_proxy.send(self.groupchat_secondary_agent, message=prompt, clear_history=False, config_list=self.config_list)
+            self.groupchat_user_proxy.send(recipient=self.groupchat_secondary_agent, message=prompt)
         elif problem_type == "SIMPLE":
             if not self.two_way_user_proxy or not self.two_way_secondary_agent:
                 raise ValueError(f"Error occurred initiating the agents {self.two_way_user_proxy}, {self.two_way_secondary_agent} -  problem type: {problem_type}")
-            self.two_way_user_proxy.send(self.two_way_secondary_agent, message=prompt, clear_history=False, config_list=self.config_list)
+            self.two_way_user_proxy.send(recipient=self.two_way_secondary_agent, message=prompt)
 

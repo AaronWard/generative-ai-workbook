@@ -4,6 +4,7 @@ using chainlit and Apache eCharts
 
 Written by: Aaron Ward - October 2023.
 """
+import os
 import json
 import autogen
 import chainlit as cl
@@ -14,7 +15,7 @@ from dotenv import find_dotenv, load_dotenv
 from agents.db_agent import DBAgent
 
 output_folder = "_output/"
-logs_filename = f"{output_folder}/_logs/conversations_{datetime.now().timestamp()}.json"
+logs_filename = f"{output_folder}_logs/conversations_{datetime.now().timestamp()}.json"
 
 TOTAL_COST = 0.0
 MAX_ITER = 100
@@ -37,14 +38,57 @@ load_dotenv(find_dotenv())
 # into "tiger teams" to achieve a given task.
 # TODO: Incorporate orchestration of groupchat conversations
 # TODO: Intergrate multiple facets of direction: RAG, Database search
-# TODO: Finish @cl.on_settings_update to set default configurations 
-# TODO: make function for getting table definitions, and stuff into system message.
- 
-
 
 @cl.on_settings_update
-async def setup_agent(settings):
-    print("on_settings_update", settings)
+async def update_agent_settings(settings):
+    agent = cl.user_session.get("agent")
+
+    agent.model = settings['Model']    
+    agent.instantiate_groupchat()
+    agent.instantiate_two_way_chat()
+
+
+    print(agent.two_way_secondary_agent.llm_config)
+    # agent.two_way_secondary_agent.llm_config.model.update(settings['Model'])
+    # agent.two_way_secondary_agent.llm_config.temperature.update(settings['Temperature'])
+    
+    # agent.two_way_user_proxy.llm_config.model.update(settings['Model'])
+    # agent.two_way_user_proxy.llm_config.temperature.update(settings['Temperature'])
+    print(f"Settings updated {settings}")
+
+async def setup_avatars():
+    avatar_configurations = [
+        {
+            "name": "User",
+            "url": "https://api.dicebear.com/7.x/thumbs/svg?seed=Callie&rotate=360&eyes=variant4W14&eyesColor=ffffff,000000",
+        },
+        {
+            "name": "User Proxy",
+            "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
+        },
+        {
+            "name": "Data Engineer",
+            "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
+        },
+        {
+            "name": "chatbot",
+            "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Dusty&backgroundColor=ffb300",
+        },
+        {
+            "name": "Function Call",
+            "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
+        },
+        {
+            "name": "assistant",
+            "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
+        },
+    ]
+    
+    for avatar in avatar_configurations:
+        await cl.Avatar(
+            name=avatar["name"],
+            url=avatar["url"],
+        ).send()
 
 @cl.on_chat_start
 async def setup_agent():
@@ -61,42 +105,23 @@ async def setup_agent():
             ]
     ).send()
 
-    print(settings)
-
     # Initialize Agents
     agent = DBAgent(
         work_dir=output_folder,
         temperature=settings['Temperature'],
         model=settings["Model"]
     )
-    agent.clear_history()
+    agent.clear_history(clear_previous_work=True)
 
     # UI Configuirations
-    await cl.Avatar(
-        name=USER_NAME,
-        url="https://api.dicebear.com/7.x/thumbs/svg?seed=Callie&rotate=360&eyes=variant4W14&eyesColor=ffffff,000000",
-    ).send()
+    await setup_avatars()
 
-    await cl.Avatar(
-        name=USER_PROXY_NAME,
-        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
-    ).send()
 
-    await cl.Avatar(
-        name=ASSISTANT_NAME,
-        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
-    ).send()
-
-    await cl.Avatar(
-        name="chatbot",
-        url="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Dusty&backgroundColor=ffb300",  # Change this to the desired avatar URL
-    ).send()
-
-    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ")
-    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")
+    # User Session Variables
     two_way_secondary_agent_name = agent.two_way_secondary_agent.name.replace("_", " ")
     two_way_user_proxy_name = agent.two_way_user_proxy.name.replace("_", " ")
-
+    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ") # name
+    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")  # admin_name
 
     # Setting user session variables
     cl.user_session.set('agent', agent)
@@ -130,127 +155,143 @@ async def upload_file(files: any):
             file.write(content)
 
 def save_logs(logs_filename=logs_filename):
+    # Make sure the directory exists
+    os.makedirs(os.path.dirname(logs_filename), exist_ok=True)
+
+    # Now save the logs
     logs = autogen.ChatCompletion.logged_history
-    json.dump(logs, open(logs_filename, "w"), 
-                indent=4)
+    with open(logs_filename, "w") as log_file:
+        json.dump(logs, log_file, indent=4)
+
     return logs
+
 
 @cl.on_message
 async def run_conversation(user_message: str):
     try:
-        # check if user message changed
-        if user_message == cl.user_session.get('user_message'):
+        # Ensure user message is not repeating
+        last_user_message = cl.user_session.get('user_message')
+        if user_message == last_user_message:
             return
-                
-        # Get agents and append termination notice if necessary
-        agent = cl.user_session.get("agent")
-        # assistant = cl.user_session.get(ASSISTANT_NAME)
-        # user_proxy = cl.user_session.get(USER_PROXY_NAME)
+        else:
+            cl.user_session.set('user_message', user_message)
 
-
-        # Variables for conversation loop
+        # Initialize conversation variables
         cur_iter = 0
         final_response = None  
+        termination_flag = False
+        
 
-        # TODO: Making this naming dict dynamic 
-        # depending on what approach was chosen.
+        print(f"Problem type: {PROBLEM_TYPE}")
+
+        # Get the correct agents based on the problem type
+        agent = cl.user_session.get("agent")
+        assistant = cl.user_session.get(agent.two_way_secondary_agent.name.replace("_", " "))
+        user_proxy = cl.user_session.get(agent.two_way_user_proxy.name.replace("_", " "))
+
         naming_dict = {
-            "User": "You",
-            "User_Proxy": USER_PROXY_NAME,
-            "Data_Engineer": ASSISTANT_NAME,
+            "user": user_proxy.name.replace("_", " "), 
+            "assistant": assistant.name.replace("_", " "),
         }
-
-        # TODO: Replace this LLM logic to decide the complexity
-        # to act as a router for the different interactions
-        if PROBLEM_TYPE == "COMPLEX":
-            assistant = agent.groupchat_secondary_agent
-            user_proxy = agent.groupchat_user_proxy
-        elif PROBLEM_TYPE == "SIMPLE":
-            assistant = agent.two_way_secondary_agent
-            user_proxy = agent.two_way_user_proxy
 
         print("Start logging...")
         autogen.ChatCompletion.start_logging()
+
+        # Run the agent to get initial or continued response
         if len(assistant.chat_messages[user_proxy]) == 0:
-            agent.run(problem_type=PROBLEM_TYPE, prompt=user_message)
+            await cl.make_async(agent.run)(problem_type=PROBLEM_TYPE, prompt=user_message)
         else:
-            agent._continue(problem_type=PROBLEM_TYPE, prompt=user_message)
-        # autogen.ChatCompletion.stop_logging()
+            await cl.make_async(agent._continue)(problem_type=PROBLEM_TYPE, prompt=user_message)
 
-
-        while cur_iter < MAX_ITER:            
+        while cur_iter < MAX_ITER and not termination_flag:
+            # Retrieve and filter message history
             original_message_history = assistant.chat_messages[user_proxy]
             last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
 
-            # Filter out messages with "TERMINATE"
-            # Filter and modify messages with "TERMINATE"
-            message_history = []
-            for message in original_message_history:
-                print(message)
-                stripped_content = message["content"].strip()
-                if stripped_content != "TERMINATE":
-                    if stripped_content.endswith("TERMINATE"):
-                        message["content"] = stripped_content.replace("TERMINATE", "").strip()
-                    message_history.append(message)
+            print(f"Original message history: {original_message_history}")
 
-            # TODO: Sometimes a message is just terminate, sometimes it stops with a full messages
-            # with the word terminate in it. Therefore, in order check if hard problems are not completing
-            # from a UI perspective it needs to have a check in the while loof for a TEMINATION status
-            # for both of these conditions, then it can break out of the loop when a termination occurs.
-            # I will need to move the conditions and stripping above down below as i need it
-            # in the message history 
+            # The new message history list should only include new messages
+            new_message_history = original_message_history[last_seen_message_index:]
 
-            # Check if message_history is not empty to avoid IndexError
-            if message_history:
-                # Identify the final response
-                final_response = message_history[-1]["content"]
-            else:
-                final_response = "No valid messages found." 
-            
-            # Loop through and display the messages, excluding the final one
-            for message in message_history[last_seen_message_index:-1]:
-                if message['content'].rstrip() == "TERMINATE":
-                    break
+            print(f"New message history: {new_message_history}")
 
-                await cl.Message(
-                    author=naming_dict[message["role"]],
-                    content=message["content"],
-                    indent=1 
-                ).send()
-            
-            cl.user_session.set('last_seen_message_index', len(message_history))
+            # Process messages, checking for TERMINATE condition
+            for i, message in enumerate(new_message_history):
+                function_call = message.get("function_call", None)
+                content = message.get("content", "")
+                if content is None:
+                    continue  # Skip this iteration if content is None
+                
+                content = content.strip()
+                is_last_message = (i == len(new_message_history) - 1)
+
+                # Check for TERMINATE condition
+                if "TERMINATE" in content:
+                    if is_last_message:
+                        # If TERMINATE is in the last message, strip it and set termination_flag
+                        termination_flag = True
+                        final_response = content.replace("TERMINATE", "").strip()
+                        break  # Stop processing messages, as we have reached the end
+                    else:
+                        # If TERMINATE is not in the last message, strip it and continue
+                        content = content.replace("TERMINATE", "").strip()
+
+                # Only send non-empty contents
+                if content:
+                    await cl.Message(
+                        author=naming_dict.get(message["role"], message["role"]),
+                        content=content,
+                        indent=1
+                    ).send()
+
+                if function_call:
+                    await cl.Message(
+                        author=naming_dict.get(message["role"], "Function Call"),
+                        content=function_call,
+                        indent=1
+                    ).send()
+
+            # Update the last seen index
+            cl.user_session.set('last_seen_message_index', len(original_message_history))
+
+            if termination_flag:
+                final_response = new_message_history[-1].get("content", "").strip() if new_message_history else "No valid messages found."
+                break
+
             cur_iter += 1
 
+        print(f"Final response: {final_response}")
+
+        # Send the final message
         if final_response:
-            # Send the final message without indentation and with "chatbot" author, outside the loop
             await cl.Message(
                 author="chatbot",
                 content=final_response,
-                indent=0  # No indentation
+                indent=0
             ).send()
         else:
             await cl.Message(
                 author="chatbot",
                 content="Sorry, we got lost in thought...",
-                indent=0  # No indentation
+                indent=0
             ).send()
 
-        # Display cost logs
+        # Display cost logs and update total cost
         logs = save_logs()
+        autogen.ChatCompletion.stop_logging()
         conversation = next(iter(logs.values()))
         cost = sum(conversation["cost"])
+        TOTAL_COST = cl.user_session.get("total_cost", 0.0) + cost
+        cl.user_session.set("total_cost", TOTAL_COST)
 
-        TOTAL_COST = float(cl.user_session.get("total_cost", 0))
-        cost += TOTAL_COST
-        cl.user_session.set("total_cost", cost)
-
-        cost_counter = cl.TaskList(name="Cost Counter", status="running")
+        # Display cost counter
+        cost_counter = cl.TaskList(status="Done")
         await cost_counter.send()
-        cost_task = cl.Task(title=f"Total Cost in USD for this conversation: ${float(cl.user_session.get('total_cost', 0)):.2f}", status=cl.TaskStatus.DONE)
+        cost_task = cl.Task(title=f"Total Cost in USD for this conversation: ${TOTAL_COST:.2f}", status=cl.TaskStatus.DONE)
         await cost_counter.add_task(cost_task)
         await cost_counter.send()
 
     except Exception as e:
         error_msg = f"An error occurred: {str(e)}"
-        raise ValueError(error_msg)
         await cl.Message(content=error_msg).send()
+        raise  # Rethrow the exception after sending the error message to the user

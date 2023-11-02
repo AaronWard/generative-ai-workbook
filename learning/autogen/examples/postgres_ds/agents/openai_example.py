@@ -1,6 +1,8 @@
 """
 OpenAI API Example for simple chaining.
 (not used in final implementation)
+
+Written by: Aaron Ward - 2nd November 2023
 """
 
 import os

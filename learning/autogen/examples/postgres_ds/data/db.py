@@ -1,7 +1,9 @@
 """
-This script is a manager object for function calls
-with a postgresql database
+This script is a manager object for query requests
+with a postgresql database. This script takes 
+inspiration from a walkthrough by IndyDevDan
 
+Written by: Aaron Ward - 2nd November 2023
 """
 import psycopg2
 from psycopg2.sql import SQL, Identifier

@@ -1,14 +1,12 @@
 
 """
-This script contains helper functions related to autogen. Update instantiate_agents
-with the appropriate agents interaction scenario to evaluate.
-"""
-"""
 This script is contains helper functions
 related to autogen. Update initiate_agents
 with the appropriate agents interaction scenario to evaluate.
 
+Written by: Aaron Ward - 2nd November 2023
 """
+
 
 import os
 import sys
@@ -16,8 +14,8 @@ import shutil
 import logging
 import autogen
 from autogen import AssistantAgent, UserProxyAgent
-
 sys.path.append('../')
+
 
 class AgentBase():
     """
@@ -38,7 +36,7 @@ class AgentBase():
         self.two_way_secondary_agent = None
         self.groupchat_user_proxy = None
         self.groupchat_secondary_agent = None
-    
+
     def get_config_list(self):
         """
         Get a list of configuration options for Autogen.

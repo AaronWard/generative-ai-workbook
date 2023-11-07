@@ -90,6 +90,54 @@ async def setup_avatars():
             url=avatar["url"],
         ).send()
 
+import numpy as np
+import pandas as pd
+from datetime import datetime, timedelta
+
+
+async def get_chart():
+    # Filter out rows where DIAGNOSED_COVID is not 1 and drop rows with null DIAGNOSES_DATE
+    # data = data[data['DIAGNOSED_COVID'] == 1].dropna(subset=['DIAGNOSES_DATE'])
+    
+    # # Group by DIAGNOSES_DATE and count the number of cases per date
+    # covid_cases_by_date = data.groupby('DIAGNOSES_DATE').size().reset_index(name='cases_count')
+    
+    # # Sort by date
+    # covid_cases_by_date.sort_values(by='DIAGNOSES_DATE', inplace=True)
+    
+    # dates = covid_cases_by_date['DIAGNOSES_DATE'].tolist()
+    # cases_count = covid_cases_by_date['cases_count'].cumsum().tolist()
+
+    def generate_example_data(num_days=30, seed=1):
+        np.random.seed(seed)  # for reproducibility
+        date_list = [datetime.today() - timedelta(days=x) for x in range(num_days)]
+        cases_count = np.random.randint(1, 100, size=num_days)
+        
+        # Creating a DataFrame
+        data = pd.DataFrame({
+            'DIAGNOSES_DATE': date_list,
+            'DIAGNOSED_COVID': np.random.choice([True, False], size=num_days, p=[0.3, 0.7]),
+            'cases_count': cases_count
+        })
+
+        # Filter out rows where DIAGNOSED_COVID is not True
+        data = data[data['DIAGNOSED_COVID']].reset_index(drop=True)
+        
+        # Assuming cases_count is cumulative
+        data['cumulative_cases'] = data['cases_count'].cumsum()
+        
+        return data
+
+
+    data = generate_example_data()
+
+    dates = data['DIAGNOSES_DATE'].dt.strftime('%Y-%m-%d').tolist()
+    cases_count = data['cumulative_cases'].tolist()
+
+    plot = None # TODO: Replace with plotly implementation with chainlit update.
+    
+    return plot
+
 @cl.on_chat_start
 async def setup_agent():
     # Set up agent configuration
@@ -132,7 +180,17 @@ async def setup_agent():
     cl.user_session.set("total_cost", TOTAL_COST)
 
     await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
+        
+    # chart_option = await get_chart()  # Get the chart configuration
+    # if chart_option is not None:
+    #     # print(type(chart_component))
+    #     # await cl.Message(content=chart_component)), author="chatbot").send()
+    #     # await cl.Message(content=chart_component, author="chatbot").send()  # Send the chart component to the UI
+    # else:
+    #     await cl.Message(content="Failed to generate chart data.", author="chatbot").send()  # Send an error message if chart data is None
+    
 
+    
 @cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
 async def upload_file(files: any):
     """

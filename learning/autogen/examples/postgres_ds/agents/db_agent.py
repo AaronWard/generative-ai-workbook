@@ -140,6 +140,10 @@ class DBAgent(AgentBase):
         print("Agents Initiated!")
 
     def instantiate_groupchat(self):
+        # TODO: Ramblings of a mad man, but imagine
+        # you could pass this function to a conversation
+        # and allow the agents to spin off their own sub agent conversations
+        # if they need to create a spin off task using different agents.
         logging.info("Initializing Agents")
 
         llm_config_common = self.get_config_common()

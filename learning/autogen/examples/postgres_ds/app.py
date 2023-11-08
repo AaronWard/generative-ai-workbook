@@ -10,6 +10,7 @@ import autogen
 import chainlit as cl
 from pathlib import Path
 from datetime import datetime
+import plotly.graph_objects as go
 
 from dotenv import find_dotenv, load_dotenv
 from agents.db_agent import DBAgent
@@ -133,10 +134,25 @@ async def get_chart():
 
     dates = data['DIAGNOSES_DATE'].dt.strftime('%Y-%m-%d').tolist()
     cases_count = data['cumulative_cases'].tolist()
-
-    plot = None # TODO: Replace with plotly implementation with chainlit update.
     
-    return plot
+    # Create Plotly figure
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=dates,
+                y=cases_count,
+                mode='lines+markers',
+                name='Cumulative COVID Cases'
+            )
+        ],
+        layout=go.Layout(
+            title='COVID-19 Cumulative Cases Over Time',
+            xaxis=dict(title='Date'),
+            yaxis=dict(title='Cumulative Cases')
+        )
+    )
+    
+    return fig
 
 @cl.on_chat_start
 async def setup_agent():
@@ -181,36 +197,37 @@ async def setup_agent():
 
     await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
         
-    # chart_option = await get_chart()  # Get the chart configuration
-    # if chart_option is not None:
-    #     # print(type(chart_component))
-    #     # await cl.Message(content=chart_component)), author="chatbot").send()
-    #     # await cl.Message(content=chart_component, author="chatbot").send()  # Send the chart component to the UI
-    # else:
-    #     await cl.Message(content="Failed to generate chart data.", author="chatbot").send()  # Send an error message if chart data is None
-    
+    chart_fig = await get_chart()  # Get the chart figure
+    if chart_fig:
+        await cl.Message(
+            content=WELCOME_MESSAGE,
+            elements=[cl.Plotly(name="CovidChart", figure=chart_fig, display="inline")],
+            author="chatbot"
+        ).send()
+    else:
+        await cl.Message(content="Failed to generate chart data.", author="chatbot").send()  # Send an error message if chart data is None
 
     
-@cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
-async def upload_file(files: any):
-    """
-    Handle uploaded files.
-    Example:
-        [{
-            "name": "example.txt",
-            "content": b"File content as bytes",
-            "type": "text/plain"
-        }]
-    """
-    for file_data in files:
-        file_name = file_data["name"]
-        content = file_data["content"]
-        # If want to show content Content: {content.decode('utf-8')}\n\n
-        await cl.Message(content=f"Uploaded file: {file_name}\n").send()
+# @cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
+# async def upload_file(files: any):
+#     """
+#     Handle uploaded files.
+#     Example:
+#         [{
+#             "name": "example.txt",
+#             "content": b"File content as bytes",
+#             "type": "text/plain"
+#         }]
+#     """
+#     for file_data in files:
+#         file_name = file_data["name"]
+#         content = file_data["content"]
+#         # If want to show content Content: {content.decode('utf-8')}\n\n
+#         await cl.Message(content=f"Uploaded file: {file_name}\n").send()
         
-        # Save the file locally
-        with open(file_name, "wb") as file:
-            file.write(content)
+#         # Save the file locally
+#         with open(file_name, "wb") as file:
+#             file.write(content)
 
 def save_logs(logs_filename=logs_filename):
     # Make sure the directory exists

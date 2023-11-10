@@ -37,7 +37,7 @@ _Ask a question, or start off with one of the examples below._ 👇
 """
 load_dotenv(find_dotenv())
 
-############################ Agent Setup Functions #####################################
+############################ Agent Functions #####################################
 
 async def setup_agents(temperature: float,
                         model: str):
@@ -67,7 +67,6 @@ async def setup_agents(temperature: float,
     # cl.user_session.set(groupchat_secondary_agent_name, agent.groupchat_secondary_agent)
     # cl.user_session.set(groupchat_user_proxy_name, agent.groupchat_user_proxy)
 
-
 async def save_logs(logs_filename=logs_filename):
     # Make sure the directory exists
     os.makedirs(os.path.dirname(logs_filename), exist_ok=True)
@@ -90,6 +89,17 @@ async def update_agent_settings(settings):
 
 ########################## User Interface Functions ########################################
 
+naming_dict = {
+    "User_Proxy": "User Proxy",
+    "assistant": "Assistant Agent",
+    "User Proxy": "User Proxy",
+    "User": "User",
+    "user": "User Proxy",
+    "function": "Code output",
+    "Data_Engineer": "Data Engineer"
+}
+
+
 async def setup_avatars():
     """Function for avatar icons"""
     avatar_configurations = [
@@ -110,11 +120,11 @@ async def setup_avatars():
             "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Dusty&backgroundColor=ffb300",
         },
         {
-            "name": "Function Call",
+            "name": "Code output",
             "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
         },
         {
-            "name": "assistant",
+            "name": "Assistant Agent",
             "url": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Fluffy&radius=45&backgroundColor=546e7a",
         },
     ]
@@ -141,19 +151,55 @@ async def setup_chat_settings():
 
     return settings
 
+@cl.action_callback("on_chat_start_action")
+async def on_action(action):
+    await action.remove()
+
+    print(action.value)
+    action_msg = cl.Message(content=action.value, author="User",indent=0)
+    await action_msg.send()
+
+    await handle_message(cl.Message(content=action.value, author="User",
+                     indent=0))
+
+    # await handle_message(user_message: dict)
+
 @cl.on_chat_start
 async def setup_chat():
+
+    # Setup Actions
+    actions = [
+        cl.Action(
+                name="on_chat_start_action", 
+                value="Get the count of people haven't had a checkup in 2 years.", 
+                description="Tell me who hasn't had a checkup in 2 years",
+                label="How many people haven't had a checkup in 2 years",
+            ),
+        cl.Action(
+                name="on_chat_start_action", 
+                value="Get the top 5 states where the most COVID-19 cases were present", 
+                description="Get the top 5 states where the most COVID-19 cases were present",
+                label="Where are the most COVID-19 cases?", 
+            ),
+        cl.Action(
+                name="on_chat_start_action", 
+                value="Get the average age of people with lung disease", 
+                description="Get the average age of people with lung disease",
+                label="Average age of people with lung disease", 
+            ),
+    ]
+
     # UI Configuirations
     await setup_avatars()
-    await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
-    
+    await cl.Message(content=WELCOME_MESSAGE, author="chatbot", actions=actions).send()
+
     # Initialize Agents
     settings = await setup_chat_settings()
     await setup_agents(temperature=settings['Temperature'],
                         model=settings['Model'])
 
     cl.user_session.set("total_cost", TOTAL_COST)
-        
+    
 
 ########################## Message Handling Functions ########################################
 
@@ -184,14 +230,13 @@ async def handle_message_indentation():
     agent = cl.user_session.get("agent")
     assistant = cl.user_session.get(agent.two_way_secondary_agent.name.replace("_", " "))
     user_proxy = cl.user_session.get(agent.two_way_user_proxy.name.replace("_", " "))
-
-    cur_iter = 0
     final_response = None
 
     # Retrieve and filter message history
     original_message_history = assistant.chat_messages[user_proxy]
     last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
     new_message_history = original_message_history[last_seen_message_index:]
+
 
     # Process messages and check for TERMINATE condition
     for i, message in enumerate(new_message_history):
@@ -211,13 +256,13 @@ async def handle_message_indentation():
         # Only send non-empty and non-TERMINATE contents
         if content:
             await cl.Message(
-                author=message["role"].replace("_", " "),
+                author=naming_dict[message["role"]],
                 content=content,
                 indent=1
             ).send()
         if function_call:
             await cl.Message(
-                author=message["role"].replace("_", " "),
+                author=naming_dict[message["role"]],
                 content=function_call,
                 indent=1
             ).send()
@@ -225,7 +270,9 @@ async def handle_message_indentation():
     cl.user_session.set('last_seen_message_index', len(original_message_history))
     if final_response is not None:
         final_response = final_response.strip().replace("TERMINATE.", "").replace("TERMINATE", "")
+    print(final_response)
     return final_response
+
 
 async def send_final_response(final_response):
             # Send the final message
@@ -258,56 +305,12 @@ def update_cost_counter(logs):
     cost_task = cl.Task(title=f"Total Cost in USD for this conversation: ${TOTAL_COST:.2f}", status=cl.TaskStatus.DONE)
     return cost_counter, cost_task
 
-
-# @cl.on_message
-# async def handle_message(user_message: dict):
-#     """Handle a message from a user"""
-
-#     print(f"Problem type: {PROBLEM_TYPE}")
-
-#     if user_message.elements:
-#         for element in user_message.elements:
-#             if 'text/plain' in element.mime:
-#                 await handle_text_file(element)
-#             elif 'image/' in element.mime:
-#                 await handle_image_file(element)
-            
-#     # Ensure user message is not repeating
-#     last_user_message = cl.user_session.get('user_message')
-#     print(f"last user message: {last_user_message}")
-#     if user_message.content == last_user_message:
-#         return
-#     else:
-#         cl.user_session.set('user_message', user_message.content)
-
-#     try:
-#         # Running Autogen to solve the problem
-#         print("Start logging...")
-#         autogen.ChatCompletion.start_logging()
-
-#         await cl.make_async(get_response)(user_message.content)
-
-        
-#         final_response = await handle_message_indentation()
-#         await cl.make_async(send_final_response)(final_response)
-
-#         logs = await cl.make_async(save_logs)()
-#         autogen.ChatCompletion.stop_logging()
-#         print("Stopped Logging...")
-#         await cl.make_async(update_cost_counter)(logs)
-
-#     except Exception as e:
-#         error_msg = f"An error occurred: {str(e)}"
-#         await cl.Message(content=error_msg).send()
-#         raise 
-
-
 @cl.on_message
 async def handle_message(user_message: dict):
     """Handle a message from a user"""
+    print(user_message.content)
 
     print(f"Problem type: {PROBLEM_TYPE}")
-
     if user_message.elements:
         for element in user_message.elements:
             if 'text/plain' in element.mime:
@@ -320,6 +323,13 @@ async def handle_message(user_message: dict):
         return
     cl.user_session.set('user_message', user_message.content)
 
+
+    await cl.Message(
+            author="User Proxy",
+            content=user_message.content,
+            indent=1,
+    ).send()
+
     try:
         autogen.ChatCompletion.start_logging()
         print(f"Start logging...")
@@ -327,7 +337,6 @@ async def handle_message(user_message: dict):
         # Ensure the get_response is awaited properly
         await get_response(user_message.content)
         print(f"Make call to get_response...")
-
 
         # Ensure the save_logs is awaited properly
         print(f"Make call to save_logs...")
@@ -356,3 +365,4 @@ async def handle_message(user_message: dict):
     except Exception as e:
         error_msg = f"An error occurred: {str(e)}"
         await cl.Message(content=error_msg).send()
+        raise

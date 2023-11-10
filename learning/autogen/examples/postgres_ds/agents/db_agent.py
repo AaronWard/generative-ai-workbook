@@ -137,7 +137,6 @@ class DBAgent(AgentBase):
 
         self.two_way_user_proxy = user_proxy
         self.two_way_secondary_agent = data_engineer
-        print("Agents Initiated!")
 
     def instantiate_groupchat(self):
         # TODO: Ramblings of a mad man, but imagine
@@ -202,7 +201,10 @@ class DBAgent(AgentBase):
         table_defitions = self.get_table_definitions_for_prompt()
         termination_notice = self.get_additional_termination_notice()
         
-        prompt = prompt + f"\n\n{termination_notice}"
+        prompt_text = prompt.text if hasattr(prompt, 'text') else str(prompt)  # Convert to string if 'text' attribute is not found
+
+            # Now you can safely concatenate strings
+        prompt = prompt_text + f"\n\n{termination_notice}"
         prompt = prompt + f"\n\nUse these table defitions: {table_defitions}"
 
         return prompt

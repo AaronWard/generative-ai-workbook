@@ -6,10 +6,13 @@ Written by: Aaron Ward - October 2023.
 """
 import os
 import json
-import autogen
-import chainlit as cl
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
+
+import autogen
+import numpy as np
+import pandas as pd
+import chainlit as cl
 import plotly.graph_objects as go
 
 from dotenv import find_dotenv, load_dotenv
@@ -18,46 +21,77 @@ from agents.db_agent import DBAgent
 output_folder = "_output/"
 logs_filename = f"{output_folder}_logs/conversations_{datetime.now().timestamp()}.json"
 
+# PROBLEM_TYPE = "COMPLEX"
+PROBLEM_TYPE = "SIMPLE"
 TOTAL_COST = 0.0
 MAX_ITER = 100
 USER_NAME = "User"
 USER_PROXY_NAME = "User Proxy"
 ASSISTANT_NAME = "Data Engineer"
 WELCOME_MESSAGE = f"""
-BLUE 👾
+**👾 Multi Agent Data Science Team 👾**\n
+_With this tool you are connected to synthetic healthcare database and article knowledgebase._
+_A team of agents work in the background to get you the answers you want using various sources._
+_Ask a question, or start off with one of the examples below._ 👇
 \n\n
 """
-
-# PROBLEM_TYPE = "COMPLEX"
-PROBLEM_TYPE = "SIMPLE"
-
 load_dotenv(find_dotenv())
 
-##########################################################
+############################ Agent Setup Functions #####################################
 
-# TODO: Make dynamic agent assigning capability, which will allow the agents to be picked dynamically
-# into "tiger teams" to achieve a given task.
-# TODO: Incorporate orchestration of groupchat conversations
-# TODO: Intergrate multiple facets of direction: RAG, Database search
+async def setup_agents(temperature: float,
+                        model: str):
+    """Create Agent objects and set user session variables"""
+    agent = DBAgent(
+        work_dir=output_folder,
+        temperature=temperature,
+        model=model
+    )
+    agent.clear_history(clear_previous_work=True)
 
-@cl.on_settings_update
-async def update_agent_settings(settings):
-    agent = cl.user_session.get("agent")
-
-    agent.model = settings['Model']    
+    # Setup subagent interactions
     agent.instantiate_groupchat()
     agent.instantiate_two_way_chat()
 
+    # User Session Variables TODO: make this dynamic
+    two_way_secondary_agent_name = agent.two_way_secondary_agent.name.replace("_", " ")
+    two_way_user_proxy_name = agent.two_way_user_proxy.name.replace("_", " ")
 
-    print(agent.two_way_secondary_agent.llm_config)
-    # agent.two_way_secondary_agent.llm_config.model.update(settings['Model'])
-    # agent.two_way_secondary_agent.llm_config.temperature.update(settings['Temperature'])
-    
-    # agent.two_way_user_proxy.llm_config.model.update(settings['Model'])
-    # agent.two_way_user_proxy.llm_config.temperature.update(settings['Temperature'])
+    # Setting user session variables
+    cl.user_session.set('agent', agent)
+    cl.user_session.set(two_way_secondary_agent_name, agent.two_way_secondary_agent)
+    cl.user_session.set(two_way_user_proxy_name, agent.two_way_user_proxy)    
+
+    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ") # name
+    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")  # admin_name
+    # cl.user_session.set(groupchat_secondary_agent_name, agent.groupchat_secondary_agent)
+    # cl.user_session.set(groupchat_user_proxy_name, agent.groupchat_user_proxy)
+
+
+async def save_logs(logs_filename=logs_filename):
+    # Make sure the directory exists
+    os.makedirs(os.path.dirname(logs_filename), exist_ok=True)
+
+    # Now save the logs
+    logs = autogen.ChatCompletion.logged_history
+    with open(logs_filename, "w") as log_file:
+        json.dump(logs, log_file, indent=4)
+
+    return logs
+
+@cl.on_settings_update
+async def update_agent_settings(settings):
+    """Used to update agent"""
+    await setup_agents(temperature=settings['Temperature'],
+                        model=settings['Model'])
+
     print(f"Settings updated {settings}")
 
+
+########################## User Interface Functions ########################################
+
 async def setup_avatars():
+    """Function for avatar icons"""
     avatar_configurations = [
         {
             "name": "User",
@@ -91,71 +125,7 @@ async def setup_avatars():
             url=avatar["url"],
         ).send()
 
-import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta
-
-
-async def get_chart():
-    # Filter out rows where DIAGNOSED_COVID is not 1 and drop rows with null DIAGNOSES_DATE
-    # data = data[data['DIAGNOSED_COVID'] == 1].dropna(subset=['DIAGNOSES_DATE'])
-    
-    # # Group by DIAGNOSES_DATE and count the number of cases per date
-    # covid_cases_by_date = data.groupby('DIAGNOSES_DATE').size().reset_index(name='cases_count')
-    
-    # # Sort by date
-    # covid_cases_by_date.sort_values(by='DIAGNOSES_DATE', inplace=True)
-    
-    # dates = covid_cases_by_date['DIAGNOSES_DATE'].tolist()
-    # cases_count = covid_cases_by_date['cases_count'].cumsum().tolist()
-
-    def generate_example_data(num_days=30, seed=1):
-        np.random.seed(seed)  # for reproducibility
-        date_list = [datetime.today() - timedelta(days=x) for x in range(num_days)]
-        cases_count = np.random.randint(1, 100, size=num_days)
-        
-        # Creating a DataFrame
-        data = pd.DataFrame({
-            'DIAGNOSES_DATE': date_list,
-            'DIAGNOSED_COVID': np.random.choice([True, False], size=num_days, p=[0.3, 0.7]),
-            'cases_count': cases_count
-        })
-
-        # Filter out rows where DIAGNOSED_COVID is not True
-        data = data[data['DIAGNOSED_COVID']].reset_index(drop=True)
-        
-        # Assuming cases_count is cumulative
-        data['cumulative_cases'] = data['cases_count'].cumsum()
-        
-        return data
-
-
-    data = generate_example_data()
-
-    dates = data['DIAGNOSES_DATE'].dt.strftime('%Y-%m-%d').tolist()
-    cases_count = data['cumulative_cases'].tolist()
-    
-    # Create Plotly figure
-    fig = go.Figure(
-        data=[
-            go.Scatter(
-                x=dates,
-                y=cases_count,
-                mode='lines+markers',
-                name='Cumulative COVID Cases'
-            )
-        ],
-        layout=go.Layout(
-            title='COVID-19 Cumulative Cases Over Time',
-            xaxis=dict(title='Date'),
-            yaxis=dict(title='Cumulative Cases')
-        )
-    )
-    
-    return fig
-
-@cl.on_chat_start
-async def setup_agent():
+async def setup_chat_settings():
     # Set up agent configuration
     settings = await cl.ChatSettings(
             [
@@ -169,204 +139,220 @@ async def setup_agent():
             ]
     ).send()
 
-    # Initialize Agents
-    agent = DBAgent(
-        work_dir=output_folder,
-        temperature=settings['Temperature'],
-        model=settings["Model"]
-    )
-    agent.clear_history(clear_previous_work=True)
+    return settings
 
+@cl.on_chat_start
+async def setup_chat():
     # UI Configuirations
     await setup_avatars()
+    await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
+    
+    # Initialize Agents
+    settings = await setup_chat_settings()
+    await setup_agents(temperature=settings['Temperature'],
+                        model=settings['Model'])
+
+    cl.user_session.set("total_cost", TOTAL_COST)
+        
+
+########################## Message Handling Functions ########################################
+
+async def handle_text_file(file_element):
+    # Process text file
+    pass
+
+async def handle_image_file(file_element):
+    # Process image file
+    pass
 
 
-    # User Session Variables
-    two_way_secondary_agent_name = agent.two_way_secondary_agent.name.replace("_", " ")
-    two_way_user_proxy_name = agent.two_way_user_proxy.name.replace("_", " ")
-    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ") # name
-    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")  # admin_name
+async def get_response(user_message: str):
+    agent = cl.user_session.get("agent")
+    assistant = cl.user_session.get(agent.two_way_secondary_agent.name.replace("_", " "))
+    user_proxy = cl.user_session.get(agent.two_way_user_proxy.name.replace("_", " "))
 
-    # Setting user session variables
-    cl.user_session.set('agent', agent)
-    # cl.user_session.set(groupchat_secondary_agent_name, agent.groupchat_secondary_agent)
-    # cl.user_session.set(groupchat_user_proxy_name, agent.groupchat_user_proxy)
-    cl.user_session.set(two_way_secondary_agent_name, agent.two_way_secondary_agent)
-    cl.user_session.set(two_way_user_proxy_name, agent.two_way_user_proxy)    
+    # Run the agent to get initial or continued response
+    # TODO: Stream responses to UI
+    if len(assistant.chat_messages[user_proxy]) == 0:
+        print('initiating a conversation with agent.run()')
+        await cl.make_async(agent.run)(problem_type=PROBLEM_TYPE, prompt=user_message)
+    else:
+        print('continuing a conversation with agent._continue()')
+        await cl.make_async(agent._continue)(problem_type=PROBLEM_TYPE, prompt=user_message)
+
+async def handle_message_indentation():
+    agent = cl.user_session.get("agent")
+    assistant = cl.user_session.get(agent.two_way_secondary_agent.name.replace("_", " "))
+    user_proxy = cl.user_session.get(agent.two_way_user_proxy.name.replace("_", " "))
+
+    cur_iter = 0
+    final_response = None
+
+    # Retrieve and filter message history
+    original_message_history = assistant.chat_messages[user_proxy]
+    last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
+    new_message_history = original_message_history[last_seen_message_index:]
+
+    # Process messages and check for TERMINATE condition
+    for i, message in enumerate(new_message_history):
+        content = message.get("content", "").strip() if message.get("content") else ""
+        function_call = message.get("function_call", "") if message.get("function_call") else ""
+
+        # Check for TERMINATE condition
+        if "TERMINATE" in content:
+            # If TERMINATE is the exact content of the last message, disregard it
+            if content == "TERMINATE" and i == len(new_message_history) - 1:
+                if i > 0:  # Ensure there is a message before the TERMINATE message
+                    final_response = new_message_history[i - 1].get("content", "").strip()
+                break  # Stop processing as we've reached the end
+            else:
+                content = content.strip().replace("TERMINATE.", "").replace("TERMINATE", "").strip()  # Strip TERMINATE from the content
+
+        # Only send non-empty and non-TERMINATE contents
+        if content:
+            await cl.Message(
+                author=message["role"].replace("_", " "),
+                content=content,
+                indent=1
+            ).send()
+        if function_call:
+            await cl.Message(
+                author=message["role"].replace("_", " "),
+                content=function_call,
+                indent=1
+            ).send()
+
+    cl.user_session.set('last_seen_message_index', len(original_message_history))
+    if final_response is not None:
+        final_response = final_response.strip().replace("TERMINATE.", "").replace("TERMINATE", "")
+    return final_response
+
+async def send_final_response(final_response):
+            # Send the final message
+    if final_response:
+        await cl.Message(
+            author="chatbot",
+            content=final_response,
+            indent=0
+        ).send()
+
+        chart_fig = None  # Get the chart figure
+        if chart_fig:
+            pass # TODO: Make code for displaying plotly dynamically in UI
+    else:
+        await cl.Message(
+            author="chatbot",
+            content="Sorry, please try again. we got lost in thought...",
+            indent=0
+        ).send()
+
+def update_cost_counter(logs):
+    # Display cost logs and update total cost
+    conversation = next(iter(logs.values()))
+    cost = sum(conversation["cost"])
+    TOTAL_COST = cl.user_session.get("total_cost", 0.0) + cost
     cl.user_session.set("total_cost", TOTAL_COST)
 
-    await cl.Message(content=WELCOME_MESSAGE, author="chatbot").send()
+    # Display cost counter
+    cost_counter = cl.TaskList(status="Done")
+    cost_task = cl.Task(title=f"Total Cost in USD for this conversation: ${TOTAL_COST:.2f}", status=cl.TaskStatus.DONE)
+    return cost_counter, cost_task
+
+
+# @cl.on_message
+# async def handle_message(user_message: dict):
+#     """Handle a message from a user"""
+
+#     print(f"Problem type: {PROBLEM_TYPE}")
+
+#     if user_message.elements:
+#         for element in user_message.elements:
+#             if 'text/plain' in element.mime:
+#                 await handle_text_file(element)
+#             elif 'image/' in element.mime:
+#                 await handle_image_file(element)
+            
+#     # Ensure user message is not repeating
+#     last_user_message = cl.user_session.get('user_message')
+#     print(f"last user message: {last_user_message}")
+#     if user_message.content == last_user_message:
+#         return
+#     else:
+#         cl.user_session.set('user_message', user_message.content)
+
+#     try:
+#         # Running Autogen to solve the problem
+#         print("Start logging...")
+#         autogen.ChatCompletion.start_logging()
+
+#         await cl.make_async(get_response)(user_message.content)
+
         
-    chart_fig = await get_chart()  # Get the chart figure
-    if chart_fig:
-        await cl.Message(
-            content=WELCOME_MESSAGE,
-            elements=[cl.Plotly(name="CovidChart", figure=chart_fig, display="inline")],
-            author="chatbot"
-        ).send()
-    else:
-        await cl.Message(content="Failed to generate chart data.", author="chatbot").send()  # Send an error message if chart data is None
+#         final_response = await handle_message_indentation()
+#         await cl.make_async(send_final_response)(final_response)
 
-    
-# @cl.on_file_upload(accept=["text/plain"], max_files=3, max_size_mb=2)
-# async def upload_file(files: any):
-#     """
-#     Handle uploaded files.
-#     Example:
-#         [{
-#             "name": "example.txt",
-#             "content": b"File content as bytes",
-#             "type": "text/plain"
-#         }]
-#     """
-#     for file_data in files:
-#         file_name = file_data["name"]
-#         content = file_data["content"]
-#         # If want to show content Content: {content.decode('utf-8')}\n\n
-#         await cl.Message(content=f"Uploaded file: {file_name}\n").send()
-        
-#         # Save the file locally
-#         with open(file_name, "wb") as file:
-#             file.write(content)
+#         logs = await cl.make_async(save_logs)()
+#         autogen.ChatCompletion.stop_logging()
+#         print("Stopped Logging...")
+#         await cl.make_async(update_cost_counter)(logs)
 
-def save_logs(logs_filename=logs_filename):
-    # Make sure the directory exists
-    os.makedirs(os.path.dirname(logs_filename), exist_ok=True)
-
-    # Now save the logs
-    logs = autogen.ChatCompletion.logged_history
-    with open(logs_filename, "w") as log_file:
-        json.dump(logs, log_file, indent=4)
-
-    return logs
+#     except Exception as e:
+#         error_msg = f"An error occurred: {str(e)}"
+#         await cl.Message(content=error_msg).send()
+#         raise 
 
 
 @cl.on_message
-async def run_conversation(user_message: str):
+async def handle_message(user_message: dict):
+    """Handle a message from a user"""
+
+    print(f"Problem type: {PROBLEM_TYPE}")
+
+    if user_message.elements:
+        for element in user_message.elements:
+            if 'text/plain' in element.mime:
+                await handle_text_file(element)
+            elif 'image/' in element.mime:
+                await handle_image_file(element)
+
+    last_user_message = cl.user_session.get('user_message')
+    if user_message.content == last_user_message:
+        return
+    cl.user_session.set('user_message', user_message.content)
+
     try:
-        # Ensure user message is not repeating
-        last_user_message = cl.user_session.get('user_message')
-        if user_message == last_user_message:
-            return
-        else:
-            cl.user_session.set('user_message', user_message)
-
-        # Initialize conversation variables
-        cur_iter = 0
-        final_response = None  
-        termination_flag = False
-        
-
-        print(f"Problem type: {PROBLEM_TYPE}")
-
-        # Get the correct agents based on the problem type
-        agent = cl.user_session.get("agent")
-        assistant = cl.user_session.get(agent.two_way_secondary_agent.name.replace("_", " "))
-        user_proxy = cl.user_session.get(agent.two_way_user_proxy.name.replace("_", " "))
-
-        naming_dict = {
-            "user": user_proxy.name.replace("_", " "), 
-            "assistant": assistant.name.replace("_", " "),
-        }
-
-        print("Start logging...")
         autogen.ChatCompletion.start_logging()
+        print(f"Start logging...")
 
-        # Run the agent to get initial or continued response
-        if len(assistant.chat_messages[user_proxy]) == 0:
-            await cl.make_async(agent.run)(problem_type=PROBLEM_TYPE, prompt=user_message)
-        else:
-            await cl.make_async(agent._continue)(problem_type=PROBLEM_TYPE, prompt=user_message)
+        # Ensure the get_response is awaited properly
+        await get_response(user_message.content)
+        print(f"Make call to get_response...")
 
-        while cur_iter < MAX_ITER and not termination_flag:
-            # Retrieve and filter message history
-            original_message_history = assistant.chat_messages[user_proxy]
-            last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
 
-            print(f"Original message history: {original_message_history}")
+        # Ensure the save_logs is awaited properly
+        print(f"Make call to save_logs...")
+        logs = await save_logs()
 
-            # The new message history list should only include new messages
-            new_message_history = original_message_history[last_seen_message_index:]
-
-            print(f"New message history: {new_message_history}")
-
-            # Process messages, checking for TERMINATE condition
-            for i, message in enumerate(new_message_history):
-                function_call = message.get("function_call", None)
-                content = message.get("content", "")
-                if content is None:
-                    continue  # Skip this iteration if content is None
-                
-                content = content.strip()
-                is_last_message = (i == len(new_message_history) - 1)
-
-                # Check for TERMINATE condition
-                if "TERMINATE" in content:
-                    if is_last_message:
-                        # If TERMINATE is in the last message, strip it and set termination_flag
-                        termination_flag = True
-                        final_response = content.replace("TERMINATE", "").strip()
-                        break  # Stop processing messages, as we have reached the end
-                    else:
-                        # If TERMINATE is not in the last message, strip it and continue
-                        content = content.replace("TERMINATE", "").strip()
-
-                # Only send non-empty contents
-                if content:
-                    await cl.Message(
-                        author=naming_dict.get(message["role"], message["role"]),
-                        content=content,
-                        indent=1
-                    ).send()
-
-                if function_call:
-                    await cl.Message(
-                        author=naming_dict.get(message["role"], "Function Call"),
-                        content=function_call,
-                        indent=1
-                    ).send()
-
-            # Update the last seen index
-            cl.user_session.set('last_seen_message_index', len(original_message_history))
-
-            if termination_flag:
-                final_response = new_message_history[-1].get("content", "").strip() if new_message_history else "No valid messages found."
-                break
-
-            cur_iter += 1
-
-        print(f"Final response: {final_response}")
-
-        # Send the final message
-        if final_response:
-            await cl.Message(
-                author="chatbot",
-                content=final_response,
-                indent=0
-            ).send()
-        else:
-            await cl.Message(
-                author="chatbot",
-                content="Sorry, we got lost in thought...",
-                indent=0
-            ).send()
-
-        # Display cost logs and update total cost
-        logs = save_logs()
         autogen.ChatCompletion.stop_logging()
-        conversation = next(iter(logs.values()))
-        cost = sum(conversation["cost"])
-        TOTAL_COST = cl.user_session.get("total_cost", 0.0) + cost
-        cl.user_session.set("total_cost", TOTAL_COST)
+        print(f"stopped logging...")
 
-        # Display cost counter
-        cost_counter = cl.TaskList(status="Done")
+        # Process and display messages
+        final_response = await handle_message_indentation()
+        print(f"Got final response: {final_response}")
+
+        # Send final response if available
+        await send_final_response(final_response)
+        print(f"Sent final_response")
+
+        # Update the cost counter asynchronously
+        cost_counter, cost_task = await cl.make_async(update_cost_counter)(logs)
+        # return cost_counter, cost_task
         await cost_counter.send()
-        cost_task = cl.Task(title=f"Total Cost in USD for this conversation: ${TOTAL_COST:.2f}", status=cl.TaskStatus.DONE)
         await cost_counter.add_task(cost_task)
         await cost_counter.send()
+
+        print(f"updated cost counter")
 
     except Exception as e:
         error_msg = f"An error occurred: {str(e)}"
         await cl.Message(content=error_msg).send()
-        raise  # Rethrow the exception after sending the error message to the user

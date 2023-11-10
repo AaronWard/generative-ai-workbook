@@ -323,7 +323,7 @@ async def handle_message(user_message: dict):
         return
     cl.user_session.set('user_message', user_message.content)
 
-
+    # "Using {groupchat / twoway}"
     await cl.Message(
             author="User Proxy",
             content=user_message.content,

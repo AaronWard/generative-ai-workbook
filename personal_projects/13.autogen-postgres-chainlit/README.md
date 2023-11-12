@@ -11,7 +11,7 @@ The following is a chainlit application that takes in user input, and uses agent
 
 <center>
 <video width="400" controls>
-  <source src="./public/img/ui.mov" type="video/mov">
+  <source src="./public/img/ui.mov" type="video/mp4">
 </video>
 </center>
 

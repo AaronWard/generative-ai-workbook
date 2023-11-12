@@ -7,11 +7,11 @@ The following is a chainlit application that takes in user input, and uses agent
 
 <!-- <video src='./public/img/ui.mov' width=180/> | <video src='./public/img/ui.mov' width=180/> -->
 
-[![Alt text for image](./public/img/ui.png)](./public/img/ui.mov)
+<!-- [![Alt text for image](./public/img/ui.png)](./public/img/uix.mov) -->
 
 <center>
 <video width="400" controls>
-  <source src="./public/img/ui.mov" type="video/mp4">
+  <source src="./public/img/ui.mov" type="video/mov">
 </video>
 </center>
 

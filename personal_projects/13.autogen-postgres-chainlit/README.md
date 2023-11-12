@@ -13,9 +13,10 @@ The following is a chainlit application that takes in user input, and uses agent
 The conversations between agents are hidden away, but can be viewable by clicking on the dropdown, which will show how the agents came to the final answer. The UI also contains quick actions that allow for suggestion queries. 
 
 ## Data
-The postgres instance contains 2 tables with syntethic healthcare data, which are linked by a `patient_id` primary key. One being for medical history of COVID-19 for each patient, and the other being a fact table for characteristics of the patient. Each table contains 1000 rows
+The postgres instance contains 2 tables with synthetic healthcare data, which are linked by a `patient_id` primary key. One being for medical history of COVID-19 for each patient, and the other being a fact table for characteristics of the patient. Each table contains 1000 rows
 
 <img src='./public/img/data0.png' width=500/></img>
+
 <img src='./public/img/data1.png' width=500/></img>
 
 <details>

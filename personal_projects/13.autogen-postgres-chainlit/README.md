@@ -4,22 +4,23 @@
 The following is a chainlit application that takes in user input, and uses agents to query a postgres database using SQL function calling. 
 `AssistantAgent` and `UserProxyAgent` are abstrated in a `AgentBase` class, which handles all the general operations such as setting configurations lists. `DBAgent`, which inherits from `AgentBase`, uses `PostgresMananger` to define functions to be used in function calls (ex: `self.db.run_sql`).
 
+<center>
 
 <video src='https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4' width=500/></video>
 
-<!-- [![Alt text for image](./public/img/ui.png)](https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4)
+</center>
 
-<center>
-<video width="600" controls>
-  <source src="https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4" type="video/mp4">
-</video>
-</center> -->
-
-
+The conversations between agents are hidden away, but can be viewable by clicking on the dropdown, which will show how the agents came to the final answer. The UI also contains quick actions that allow for suggestion queries. 
 
 ## Data
+The postgres instance contains 2 tables with syntethic healthcare data, which are linked by a `patient_id` primary key. One being for medical history of COVID-19 for each patient, and the other being a fact table for characteristics of the patient. Each table contains 1000 rows
 
-### Postgres Setup
+<img src='./public/img/data0.png' width=500/></img>
+<img src='./public/img/data1.png' width=500/></img>
+
+<details>
+
+<summary>Postgres Setup Notes</summary>
 
 #### Instantiate a database:
 You can copy your own csv data into the db.
@@ -74,3 +75,6 @@ source ~/.bash_profile
 lsof -i :5432 # check instances on this port
 pg_ctl -D /opt/homebrew/var/postgres16 start # start server
 ```
+
+
+</details>

@@ -5,15 +5,15 @@ The following is a chainlit application that takes in user input, and uses agent
 `AssistantAgent` and `UserProxyAgent` are abstrated in a `AgentBase` class, which handles all the general operations such as setting configurations lists. `DBAgent`, which inherits from `AgentBase`, uses `PostgresMananger` to define functions to be used in function calls (ex: `self.db.run_sql`).
 
 
-<!-- <video src='./public/img/ui.mov' width=180/> | <video src='./public/img/ui.mov' width=180/> -->
+<video src='https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4' width=500/></video>
 
-<!-- [![Alt text for image](./public/img/ui.png)](./public/img/uix.mov) -->
+<!-- [![Alt text for image](./public/img/ui.png)](https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4)
 
 <center>
 <video width="600" controls>
   <source src="https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4" type="video/mp4">
 </video>
-</center>
+</center> -->
 
 
 

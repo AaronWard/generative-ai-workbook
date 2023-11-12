@@ -10,12 +10,11 @@ The following is a chainlit application that takes in user input, and uses agent
 <!-- [![Alt text for image](./public/img/ui.png)](./public/img/uix.mov) -->
 
 <center>
-<video width="400" controls>
-  <source src="personal_projects/13.autogen-postgres-chainlit/public/img/ui.mov" type="video/mp4">
+<video width="600" controls>
+  <source src="https://user-images.githubusercontent.com/22074246/282296147-7ab64970-0941-4640-a7e7-5ddf5d27f9af.mp4" type="video/mp4">
 </video>
 </center>
 
-<video src="personal_projects/13.autogen-postgres-chainlit/public/img/ui.mov"></video>
 
 
 ## Data

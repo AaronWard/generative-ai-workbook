@@ -1,0 +1,17 @@
+role_category:
+  technical:
+    type:
+      UserProxyAgent: 
+        Admin:
+          system_message: "A human admin. Interact with the Product Manager to discuss the plan. Plan execution needs to be approved by this admin."
+      AssistantAgent:
+        Senior_Data_Analyst:
+          system_message: "Senior Data Analyst. You follow an approval plan. You run the SQL query. Generate the final response and send it to the Product Manager for review."
+        Data_Engineer:
+          system_message: "Data Engineer. You follow an approval plan. Think about and generate SQL based on the requirements provided. Send it out for review."
+  non-technical:
+      type:
+        UserProxyAgent: []
+        AssistantAgent:
+          Product_Manager:
+            system_message: "Product Manager. Validate the response to ensure it's correct."

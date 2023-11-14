@@ -1,32 +1,20 @@
 # filename: calculate_mean_age.py
+import sqlite3
 
-import psycopg2
+# Connect to the SQLite database (You need to replace 'your_database.db' with the actual database file's path)
+conn = sqlite3.connect('your_database.db')
+cursor = conn.cursor()
 
-# TODO: Replace the following placeholders with your actual database connection information
-db_name = 'your_database_name'  # Replace with your actual database name
-db_user = 'your_database_user'  # Replace with your actual database user
-db_pass = 'your_database_password'  # Replace with your actual database password
-db_host = 'your_database_host'  # Replace with your actual database host
+# Execute SQL Query to find the mean age of patients diagnosed with COVID-19
+try:
+    cursor.execute("SELECT AVG(current_age) FROM patients WHERE diagnosed_covid = 1")
+    mean_age = cursor.fetchone()[0]
+    if mean_age is not None:
+        print(f"The mean age of patients who have had COVID-19 is: {mean_age:.2f}")
+    else:
+        print("No patients with COVID-19 found or no age data available.")
+except sqlite3.Error as e:
+    print(f"An error occurred: {e}")
 
-# Connect to your database
-conn = psycopg2.connect(dbname=db_name, user=db_user, password=db_pass, host=db_host)
-
-# Create a cursor object
-cur = conn.cursor()
-
-# Execute the SQL query
-cur.execute("SELECT AVG(current_age) as mean_age FROM patients WHERE diagnosed_covid = true;")
-
-# Fetch the result
-mean_age = cur.fetchone()[0]
-
-# Close the cursor and connection
-cur.close()
+# Close the connection
 conn.close()
-
-# Check if mean_age is None (which would happen if no patients with diagnosed_covid exist)
-if mean_age is None:
-    print("No patients with diagnosed COVID-19 were found in the database.")
-else:
-    # Print the mean age
-    print(f"The mean age of patients who have had COVID-19 is: {mean_age}")

@@ -1,0 +1,14 @@
+[
+    {
+        "from_name": "Admin",
+        "to_name": "Insights",
+        "message": "Given this database query: 'Get the mean age of those who have had covid.'. Generate novel insights and new database queries to give business insights. Use these TABLE_DEFINITIONS to satisfy the database query.\n\nTABLE_DEFINITIONS\n\nCREATE TABLE patients (\nid integer,\npatient_id character varying(255),\nstate character varying(2),\nfips integer,\ndiagnosed_covid boolean,\ndiagnoses_date date,\ncurrent_age integer,\nage_at_diagnosis double precision\n);\n\nCREATE TABLE patient_medical_history (\nid integer,\npatient_id character varying(255),\nhas_diabetes boolean,\nhas_heart_disease boolean,\nhas_lung_disease boolean,\nsmoker_status character varying(10),\nbmi double precision,\nlast_checkup_date date\n);",
+        "created": 1699993906.2602592
+    },
+    {
+        "from_name": "Insights",
+        "to_name": "Insights_Data_Reporter",
+        "message": "```json\n[\n{\n    \"insight\": \"Identify the average age of patients diagnosed with covid who also have pre-existing conditions such as diabetes, heart disease, and lung disease.\",\n    \"actionable_business_value\": \"This insight can help in understanding the vulnerability of different age groups with pre-existing conditions to covid. This can guide in prioritizing healthcare resources and interventions.\",\n    \"sql\": \"SELECT AVG(patients.current_age) FROM patients INNER JOIN patient_medical_history ON patients.patient_id = patient_medical_history.patient_id WHERE patients.diagnosed_covid = true AND (patient_medical_history.has_diabetes = true OR patient_medical_history.has_heart_disease = true OR patient_medical_history.has_lung_disease = true)\"\n},\n{\n    \"insight\": \"Determine the average BMI of patients who were diagnosed with covid.\",\n    \"actionable_business_value\": \"Understanding the average BMI of covid patients can provide insights into the correlation between obesity and covid severity. This can inform public health messaging and interventions.\",\n    \"sql\": \"SELECT AVG(patient_medical_history.bmi) FROM patients INNER JOIN patient_medical_history ON patients.patient_id = patient_medical_history.patient_id WHERE patients.diagnosed_covid = true\"\n},\n{\n    \"insight\": \"Find out the average age of smokers who were diagnosed with covid.\",\n    \"actionable_business_value\": \"This insight can help in understanding the impact of smoking on covid susceptibility and severity. This can guide public health messaging and smoking cessation programs.\",\n    \"sql\": \"SELECT AVG(patients.current_age) FROM patients INNER JOIN patient_medical_history ON patients.patient_id = patient_medical_history.patient_id WHERE patients.diagnosed_covid = true AND patient_medical_history.smoker_status = 'smoker'\"\n}\n]\n```",
+        "created": 1699993938.367925
+    }
+]

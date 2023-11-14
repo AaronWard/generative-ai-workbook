@@ -1,0 +1,1 @@
+SELECT AVG(current_age) as mean_age FROM patients WHERE diagnosed_covid = TRUE;

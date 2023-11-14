@@ -1,0 +1,26 @@
+[
+    {
+        "from_name": "Admin",
+        "to_name": "Engineer",
+        "message": "Fulfill this database query: Get the mean age of those who have had covid..  Use these TABLE_DEFINITIONS to satisfy the database query.\n\nTABLE_DEFINITIONS\n\nCREATE TABLE patients (\nid integer,\npatient_id character varying(255),\nstate character varying(2),\nfips integer,\ndiagnosed_covid boolean,\ndiagnoses_date date,\ncurrent_age integer,\nage_at_diagnosis double precision\n);\n\nCREATE TABLE patient_medical_history (\nid integer,\npatient_id character varying(255),\nhas_diabetes boolean,\nhas_heart_disease boolean,\nhas_lung_disease boolean,\nsmoker_status character varying(10),\nbmi double precision,\nlast_checkup_date date\n);",
+        "created": 1699993896.615998
+    },
+    {
+        "from_name": "Engineer",
+        "to_name": "Sr_Data_Analyst",
+        "message": "Based on the provided table definitions, the SQL query to get the mean age of those who have had covid would be:\n\n```sql\nSELECT AVG(current_age) as mean_age\nFROM patients\nWHERE diagnosed_covid = TRUE;\n```\n\nPlease execute this query and let me know if you need any further assistance.",
+        "created": 1699993901.989397
+    },
+    {
+        "from_name": "Sr_Data_Analyst",
+        "to_name": "Sr_Data_Analyst",
+        "message": "ChatCompletionMessage(content=None, role='assistant', function_call=FunctionCall(arguments='{\\n  \"sql\": \"SELECT AVG(current_age) as mean_age FROM patients WHERE diagnosed_covid = TRUE;\"\\n}', name='run_sql'), tool_calls=None)",
+        "created": 1699993906.189685
+    },
+    {
+        "from_name": "Sr_Data_Analyst",
+        "to_name": "Sr_Data_Analyst",
+        "message": "ChatCompletionMessage(content=None, role='assistant', function_call=FunctionCall(arguments='{\\n  \"sql\": \"SELECT AVG(current_age) as mean_age FROM patients WHERE diagnosed_covid = TRUE;\"\\n}', name='run_sql'), tool_calls=None)",
+        "created": 1699993906.231767
+    }
+]

@@ -49,10 +49,12 @@ class ChromaAgent(AgentBase):
             This approach will provide a well-informed basis for your responses.
             If there is relevant links in the chat logs, provide the fill link in the response.
             Only provide verifiable information, don't make assumptions. If you cannot answer the question accurately, its okay - just say you can't give a confident response.
-            Give for in your answer where appropriate while adhering to this format:
+            Give code for in your answer where appropriate while adhering to this format:
             ```language
             <code>
             ```
+            If you are quoting a message directly, you should format it `>` first.
+            Be concise with your answer, writing no more then 3 paragraphs.
             \n\n
             Say TERMINATE when no further instructions are given to indicate the task is complete.
             """)
@@ -147,7 +149,7 @@ class ChromaAgent(AgentBase):
 
     def run(self, prompt):
         """Initiate a chat"""
-        prompt = self.stuff_context(prompt)
+        # prompt = self.stuff_context(prompt)
 
         if not self.user_proxy or not self.secondary_agent:
             raise ValueError(
@@ -157,7 +159,7 @@ class ChromaAgent(AgentBase):
 
     def _continue(self, prompt):
         """Continue previous chat"""
-        prompt = self.stuff_context(prompt)
+        # prompt = self.stuff_context(prompt)
 
         if not self.user_proxy or not self.secondary_agent:
             raise ValueError(

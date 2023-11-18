@@ -117,55 +117,35 @@ async def handle_message_indentation(naming_dict):
     # Retrieve and filter message history
     original_message_history = assistant.chat_messages[user_proxy]
     last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
-    new_message_history = original_message_history[last_seen_message_index:]
-
-    # for i, message in enumerate(new_message_history):
-    #     content = message.get("content", "").strip() if message.get("content") else ""
-
-    #     # Check for TERMINATE condition
-    #     if "TERMINATE" in content:
-    #         # Handle cases where TERMINATE is combined with other content
-    #         if content != "TERMINATE":
-    #             final_response = content.replace("TERMINATE", "").strip()
-    #             break
-
-    #         # If TERMINATE is the exact content of the last message, disregard it
-    #         if i == len(new_message_history) - 1 and i > 0:
-    #             final_response = new_message_history[i - 1].get("content", "").strip()
-    #             break
-
-
-    #     await cl.Message(
-    #         author=naming_dict[message["role"]],
-    #         content=content,
-    #         indent=1
-    #     ).send()
+    new_message_history = original_message_history[last_seen_message_index+1:]
+    
+    termination_msgs = ["TERMINATE", "TERMINATE."]
 
     for i, message in enumerate(new_message_history):
-        content = message.get("content", "").strip() if message.get("content") else ""
-        function_call = message.get("function_call", "") if message.get("function_call") else ""
+        content = message.get("content", "").strip()
+        function_call = message.get("function_call", "")
+        content = content.replace("TERMINATE.", "").replace("TERMINATE", "").strip()
 
-        # Check for TERMINATE condition
+        # Skip empty messages
+        if not content and not function_call:
+            continue
+
+        # Handle TERMINATE condition
         if "TERMINATE" in content:
-            # If TERMINATE is the exact content of the last message, disregard it
-            if content == "TERMINATE" and i == len(new_message_history) - 1:
-                if i > 0:  # Ensure there is a message before the TERMINATE message
-                    final_response = new_message_history[i - 1].get("content", "").strip()
-                break  # Stop processing as we've reached the end
-            else:
-                content = content.strip().replace("TERMINATE.", "").replace("TERMINATE", "").strip()  # Strip TERMINATE from the content
-        # if "TERMINATE" in content:
-        #     # Handle cases where TERMINATE is combined with other content
-        #     if content != "TERMINATE":
-        #         final_response = content.replace("TERMINATE", "").strip()
-        #         break
+            # content = content.replace("TERMINATE.", "").replace("TERMINATE", "").strip()
+            # If the content is only "TERMINATE" or becomes empty after stripping, use the previous message
+            if content == "" and i > 0:
+                final_response = new_message_history[i - 1].get("content", "").strip()
+                final_response = final_response.replace("TERMINATE.", "").replace("TERMINATE", "").strip()
+                break
+            elif content != "":
+                final_response = content
+                break
+        else:
+            final_response = content
 
-        #     # If TERMINATE is the exact content of the last message, disregard it
-        #     if i == len(new_message_history) - 1 and i > 0:
-        #         final_response = new_message_history[i - 1].get("content", "").strip()
-        #         break
-
-            # Only send non-empty and non-TERMINATE contents
+        # Send non-empty messages
+        if content:
             await cl.Message(
                 author=naming_dict[message["role"]],
                 content=content,
@@ -178,6 +158,52 @@ async def handle_message_indentation(naming_dict):
                 content=function_call,
                 indent=1
             ).send()
+
+        # TODO: For each message:
+        # If Terminate in content
+        #   1. Check content.strip "TERMINATE" == exactly, if so then skip and don't set final message
+        #   2. Check content.strip == "", if so then skip and don't set final message
+        #   3. If step 1 or 2 are true then set the the message previous as the final message
+        #       4. Apply same check as step 1: it shouldn't just be "TERMINATE". It should also not be an empty string
+        #   5. If content contains other text, not just "TERMINATE", then "TERMINATE" or "TERMINATE."should
+        #   6. `cl.Message()` should be used with content at each iteration with indent level 1
+
+
+        # Check for TERMINATE condition
+        # if "TERMINATE" in content:
+        #     # If TERMINATE is the exact content of the last message, disregard it
+        #     if content == "TERMINATE" and i == len(new_message_history) - 1:
+        #         if i > 0:  # Ensure there is a message before the TERMINATE message
+        #             final_response = new_message_history[i - 1].get("content", "").strip()
+        #         break  # Stop processing as we've reached the end
+        #     else:
+        #         content = content.strip().replace("TERMINATE.", "").replace("TERMINATE", "").strip()  # Strip TERMINATE from the content
+
+        # Check for TERMINATE condition
+        # if "TERMINATE" in content:
+        #     # Handle cases where TERMINATE is combined with other content
+        #     if content != "TERMINATE":
+        #         final_response = content.replace("TERMINATE", "").strip()
+        #         break
+
+        #     # If TERMINATE is the exact content of the last message, disregard it
+        #     if i == len(new_message_history) - 1 and i > 0:
+        #         final_response = new_message_history[i - 1].get("content", "").strip()
+        #         break
+
+            # Only send non-empty and non-TERMINATE contents
+        #     await cl.Message(
+        #         author=naming_dict[message["role"]],
+        #         content=content,
+        #         indent=1
+        #     ).send()
+        
+        # if function_call:
+        #     await cl.Message(
+        #         author=naming_dict[message["role"]],
+        #         content=function_call,
+        #         indent=1
+        #     ).send()
 
     cl.user_session.set('last_seen_message_index', len(original_message_history))
     if final_response is not None:

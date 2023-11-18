@@ -90,9 +90,9 @@ async def setup_chat():
             ),
         cl.Action(
                 name="on_chat_start_action", 
-                value="Explain the purpose of the `config_list`", 
-                description="Explain the purpose of the `config_list`",
-                label="Explain the purpose of the `config_list`", 
+                value="Explain the purpose of the config_list?", 
+                description="Explain the purpose of the config_list?",
+                label="Explain the purpose of the config_list?", 
             ),
         cl.Action(
                 name="on_chat_start_action", 

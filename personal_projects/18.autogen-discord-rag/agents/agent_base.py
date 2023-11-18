@@ -26,16 +26,14 @@ class AgentBase():
         """
         Initialize AgentBase with common configurations.
         """
-        self.model = kwargs.get('model', 'gpt-4')
+        self.model = kwargs.get('model', 'gpt-4-1106-preview')
         self.work_dir = kwargs.get('work_dir', "_output")
         self.cache_dir = kwargs.get('cache_dir', ".cache")
         self.temperature = kwargs.get('temperature', 0.2)
-        self.env_path = '../../../../.env'
+        self.env_path = '../../../.env'
         self.config_list = self.get_config_list()
-        self.two_way_user_proxy = None
-        self.two_way_secondary_agent = None
-        self.groupchat_user_proxy = None
-        self.groupchat_secondary_agent = None
+        self.user_proxy = None
+        self.secondary_agent = None
 
     def get_config_list(self):
         """
@@ -47,8 +45,7 @@ class AgentBase():
         config_list = autogen.config_list_from_dotenv(
             dotenv_file_path=self.env_path,
             model_api_key_map={
-                "gpt-4": "OPENAI_API_KEY",
-                "gpt-3.5-turbo": "OPENAI_API_KEY",
+                "gpt-4-1106-preview": "OPENAI_API_KEY",
             },
             filter_dict={
                 "model": {self.model}
@@ -77,7 +74,8 @@ class AgentBase():
         termination_notice = (
             '\n\nDo not show appreciation in your responses, say only what is necessary. '
             'if "Thank you" or "You\'re welcome" are said in the conversation, then say TERMINATE '
-            'to indicate the conversation is finished and this is your last message.'
+            'to indicate the conversation is finished'
+            # "Say TERMINATE when no further instructions are given to indicate the task is complete"
         )
         return termination_notice
 

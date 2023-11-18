@@ -1,8 +1,9 @@
 """
-This is the UI component to the multi agent framework appication
-using chainlit and Apache eCharts
+This is the UI component to the multi agent framework application
+using chainlit and autogens GPT Assistant to query Autogen's 
+Discord server chat history.
 
-Written by: Aaron Ward - October 2023.
+Written by: Aaron Ward - November 2023.
 """
 import os
 import json
@@ -16,8 +17,6 @@ import chainlit as cl
 import plotly.graph_objects as go
 
 from dotenv import find_dotenv, load_dotenv
-from agents.db_agent import DBAgent
-
 from utils.ui_utils import (save_logs, setup_chat_settings, setup_avatars, 
                             handle_message_indentation, update_cost_counter, 
                             send_final_response, handle_text_file, 
@@ -32,7 +31,7 @@ naming_dict = {
     "User": "User",
     "user": "User Proxy",
     "function": "Code output",
-    "Data_Engineer": "Data Engineer"
+    "Chroma_RAG_Assistant": "Chroma DB Assistant"
 }
 
 
@@ -43,9 +42,10 @@ USER_NAME = "User"
 USER_PROXY_NAME = "User Proxy"
 ASSISTANT_NAME = "Data Engineer"
 WELCOME_MESSAGE = f"""
-**👾 Multi Agent Data Science Team 👾**\n
-_With this tool you are connected to synthetic healthcare database and article knowledgebase._
-_A team of agents work in the background to get you the answers you want using various sources._
+**👾 Autogen Discord Chat Assistant👾**\n
+_With this tool you can query the collective knowledge from Autogen developers
+chatting with the discord server message history._
+
 _Ask a question, or start off with one of the examples below._ 👇
 \n\n
 """
@@ -84,21 +84,21 @@ async def setup_chat():
     actions = [
         cl.Action(
                 name="on_chat_start_action", 
-                value="Get the count of people haven't had a checkup in 2 years.", 
-                description="Tell me who hasn't had a checkup in 2 years",
-                label="How many people haven't had a checkup in 2 years",
+                value="What is Autogen?", 
+                description="What is Autogen?",
+                label="What is Autogen?",
             ),
         cl.Action(
                 name="on_chat_start_action", 
-                value="Get the top 5 states where the most COVID-19 cases were present", 
-                description="Get the top 5 states where the most COVID-19 cases were present",
-                label="Where are the most COVID-19 cases?", 
+                value="Explain the purpose of the `config_list`", 
+                description="Explain the purpose of the `config_list`",
+                label="Explain the purpose of the `config_list`", 
             ),
         cl.Action(
                 name="on_chat_start_action", 
-                value="Get the average age of people with lung disease", 
-                description="Get the average age of people with lung disease",
-                label="Average age of people with lung disease", 
+                value="Can you use open sourced models with Autogen?", 
+                description="Can you use open sourced models with Autogen?",
+                label="Can you use open sourced models with Autogen?", 
             ),
     ]
 
@@ -122,8 +122,6 @@ async def setup_chat():
 async def handle_message(user_message: dict):
     """Handle a message from a user"""
     print(user_message.content)
-
-    print(f"Problem type: {PROBLEM_TYPE}")
     if user_message.elements:
         for element in user_message.elements:
             if 'text/plain' in element.mime:
@@ -144,20 +142,19 @@ async def handle_message(user_message: dict):
     ).send()
 
     try:
-        autogen.ChatCompletion.start_logging()
-        print(f"Start logging...")
+        # autogen.oai.ChatCompletion.start_logging()
+        # print(f"Start logging...")
 
         # Ensure the get_response is awaited properly
-        await get_response(problem_type=PROBLEM_TYPE, 
-                           user_message=user_message.content)
+        await get_response(user_message=user_message.content)
         print(f"Make call to get_response...")
 
         # Ensure the save_logs is awaited properly
-        print(f"Make call to save_logs...")
-        logs = await save_logs(logs_filename=logs_filename)
+        # print(f"Make call to save_logs...")
+        # logs = await save_logs(logs_filename=logs_filename)
 
-        autogen.ChatCompletion.stop_logging()
-        print(f"stopped logging...")
+        # autogen.oai.ChatCompletion.stop_logging()
+        # print(f"stopped logging...")
 
         # Process and display messages
         final_response = await handle_message_indentation(naming_dict)
@@ -168,13 +165,13 @@ async def handle_message(user_message: dict):
         print(f"Sent final_response")
 
         # Update the cost counter asynchronously
-        cost_counter, cost_task = await cl.make_async(update_cost_counter)(logs)
+        # cost_counter, cost_task = await cl.make_async(update_cost_counter)(logs)
         # return cost_counter, cost_task
-        await cost_counter.send()
-        await cost_counter.add_task(cost_task)
-        await cost_counter.send()
+        # await cost_counter.send()
+        # await cost_counter.add_task(cost_task)
+        # await cost_counter.send()
 
-        print(f"updated cost counter")
+        # print(f"updated cost counter")
 
     except Exception as e:
         error_msg = f"An error occurred: {str(e)}"

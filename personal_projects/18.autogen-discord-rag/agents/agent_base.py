@@ -78,7 +78,7 @@ class AgentBase():
             # "Say TERMINATE when no further instructions are given to indicate the task is complete"
         )
         return termination_notice
-
+ 
     def clear_history(self, clear_previous_work=False):
         """
         Clean up the cache directory to avoid conversation spillover between models.

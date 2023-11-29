@@ -1,0 +1,17 @@
+Lesson 1 Fan Module
+Video Tutorial: https://youtu.be/isyNZLTA5cU
+
+Lesson 2 Touch Sensor
+Video Tutorial: https://youtu.be/oowv1iZ0S-g
+
+Lesson 3  MP3 Module
+Video Tutorial: https://youtu.be/MFKTbB0txvs
+
+Lesson 4 Ultrasonic Sensor
+Video Tutorial: https://youtu.be/qsGc_lXk5hs
+
+Lesson 5 Dot Matrix Module
+Video Tutorial: https://youtu.be/0Wi-5xWhsxA
+
+Lesson 6 Light Sensor
+Video Tutorial: https://youtu.be/BbTtsWGcwNo

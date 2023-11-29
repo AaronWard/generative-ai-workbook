@@ -1,0 +1,5 @@
+Dear Customer:
+
+Before starting and expeirence TonyPi Pro, you need to download the system image by yourself. Please refer to the system image burning method in folder "5.Appendix/1.Source Code".
+
+Thank you!

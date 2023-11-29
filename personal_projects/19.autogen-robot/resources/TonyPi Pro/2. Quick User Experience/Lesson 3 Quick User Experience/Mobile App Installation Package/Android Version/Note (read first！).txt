@@ -1,0 +1,3 @@
+Note:
+
+If you are an Android user, please enable all permissions for app before using it.

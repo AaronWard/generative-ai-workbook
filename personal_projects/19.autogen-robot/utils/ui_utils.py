@@ -8,20 +8,20 @@ import autogen
 import chainlit as cl
 from agents.robot_agent import RobotAgent
 
-async def setup_agents(temperature: float,
-                        model: str,
-                        output_folder: str):
-    """Create Agent objects and set user session variables"""
-    agent = RobotAgent(model=model)
+# async def setup_agents(temperature: float,
+#                         model: str,
+#                         output_folder: str):
+#     """Create Agent objects and set user session variables"""
+#     agent = RobotAgent(model=model)
                         
-    # # User Session Variables TODO: make this dynamic
-    # secondary_agent_name = agent.secondary_agent.name.replace("_", " ")
-    # user_proxy_name = agent.user_proxy.name.replace("_", " ")
+#     # # User Session Variables TODO: make this dynamic
+#     # secondary_agent_name = agent.secondary_agent.name.replace("_", " ")
+#     # user_proxy_name = agent.user_proxy.name.replace("_", " ")
 
-    # # Setting user session variables
-    # cl.user_session.set('agent', agent)
-    # cl.user_session.set(secondary_agent_name, agent.secondary_agent)
-    # cl.user_session.set(user_proxy_name, agent.user_proxy)    
+#     # # Setting user session variables
+#     # cl.user_session.set('agent', agent)
+#     # cl.user_session.set(secondary_agent_name, agent.secondary_agent)
+#     # cl.user_session.set(user_proxy_name, agent.user_proxy)    
 
 
 async def setup_agents(temperature: float,
@@ -30,39 +30,27 @@ async def setup_agents(temperature: float,
     """Create Agent objects and set user session variables"""
     agent = RobotAgent(model=model)
     agent.clear_history(clear_previous_work=True)
-
-    # Setup subagent interactions
     agent.instantiate_groupchat()
 
-    # User Session Variables TODO: make this dynamic
-    two_way_secondary_agent_name = agent.two_way_secondary_agent.name.replace("_", " ")
-    two_way_user_proxy_name = agent.two_way_user_proxy.name.replace("_", " ")
+    # secondary_agent_name = agent.secondary_agent.admin_name.replace("_", " ")
+    # user_proxy_name = "User Proxy"
 
-    # Setting user session variables
     cl.user_session.set('agent', agent)
-    cl.user_session.set(two_way_secondary_agent_name, agent.two_way_secondary_agent)
-    cl.user_session.set(two_way_user_proxy_name, agent.two_way_user_proxy)    
-
-    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ") # name
-    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")  # admin_name
-    # cl.user_session.set(groupchat_secondary_agent_name, agent.groupchat_secondary_agent)
-    # cl.user_session.set(groupchat_user_proxy_name, agent.groupchat_user_proxy)
-
-
-
+    cl.user_session.set("Admin", agent.secondary_agent)
+    cl.user_session.set("User Proxy", agent.user_proxy)
 
 async def setup_chat_settings():
     # Set up agent configuration
     settings = await cl.ChatSettings(
-            [
-                cl.input_widget.Select(
-                    id="Model",
-                    label="Model",
-                    values=["gpt-3.5-turbo",  "gpt-4-1106-preview", "gpt-4"],
-                    initial_index=2
-                ),
-                cl.input_widget.Slider(id="Temperature", label="Temperature (randomness)", initial=0.5, min=0, max=2, step=0.1),
-            ]
+        [
+            cl.input_widget.Select(
+                id="Model",
+                label="Model",
+                values=["gpt-3.5-turbo",  "gpt-4-1106-preview", "gpt-4"],
+                initial_index=2
+            ),
+            cl.input_widget.Slider(id="Temperature", label="Temperature (randomness)", initial=0.5, min=0, max=2, step=0.1),
+        ]
     ).send()
 
     return settings
@@ -111,12 +99,12 @@ async def setup_avatars():
 
 async def handle_message_indentation(naming_dict):
     agent = cl.user_session.get("agent")
-    assistant = cl.user_session.get(agent.secondary_agent.name.replace("_", " "))
-    user_proxy = cl.user_session.get(agent.user_proxy.name.replace("_", " "))
+    assistant = cl.user_session.get("Admin")
+    user_proxy = cl.user_session.get("User Proxy")
     final_response = None
 
     # Retrieve and filter message history
-    original_message_history = assistant.chat_messages[user_proxy]
+    original_message_history = user_proxy[assistant].messages
     last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
     new_message_history = original_message_history[last_seen_message_index+1:]
     
@@ -214,12 +202,10 @@ async def handle_message_indentation(naming_dict):
 
 async def get_response(user_message: str):
     agent = cl.user_session.get("agent")
-    assistant = cl.user_session.get(agent.secondary_agent.name.replace("_", " "))
-    user_proxy = cl.user_session.get(agent.user_proxy.name.replace("_", " "))
-
-    # Run the agent to get initial or continued response
-    # TODO: Stream responses to UI
-    if len(assistant.chat_messages[user_proxy]) == 0:
+    assistant = cl.user_session.get("Admin")
+    user_proxy = cl.user_session.get("User Proxy")
+    
+    if len(user_proxy[assistant].messages) == 0:
         print('initiating a conversation with agent.run()')
         await cl.make_async(agent.run)(prompt=user_message)
     else:

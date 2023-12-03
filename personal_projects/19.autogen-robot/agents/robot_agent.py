@@ -28,7 +28,7 @@ class RobotAgent(AgentBase):
         self.model = kwargs.get('model', "gpt-4-1106-preview")
         self.robot_motion_manager = RobotMotionManager(model=self.model)
 
-        self.instantiate_two_way_chat()
+        self.instantiate_groupchat()
 
     def get_system_messages(self):
         """
@@ -228,59 +228,59 @@ class RobotAgent(AgentBase):
         groupchat_user_proxy = autogen.GroupChat(agents=[user_proxy, robot_action_planner, robot_action_assistant], messages=[], max_round=50)
         groupchat_manager = autogen.GroupChatManager(groupchat=groupchat_user_proxy, llm_config=llm_config)
 
-        self.groupchat_user_proxy = groupchat_user_proxy
-        self.groupchat_secondary_agent = groupchat_manager
+        self.secondary_agent = groupchat_user_proxy
+        self.user_proxy = groupchat_manager
         print("Agents Initiated!")
 
 
-    def instantiate_two_way_chat(self):
-        logging.info("Initializing Agents")
-        system_messages = self.get_system_messages()
+    # def instantiate_two_way_chat(self):
+    #     logging.info("Initializing Agents")
+    #     system_messages = self.get_system_messages()
 
-        send_action_tool_config = {
-            "name": "send_action",
-            "description": "Function to send an action group name to command the raspberry pi robot",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": {"type": "string"},
-                },
-                "required": ["command"]
-            }
-        }
+    #     send_action_tool_config = {
+    #         "name": "send_action",
+    #         "description": "Function to send an action group name to command the raspberry pi robot",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "command": {"type": "string"},
+    #             },
+    #             "required": ["command"]
+    #         }
+    #     }
 
-        llm_config = {
-            "config_list": self.config_list,
-            "assistant_id": None,
-            "tools": [
-                {
-                    "type": "function",
-                    "function": send_action_tool_config
-                },
-            ],
-            "model": "gpt-4-1106-preview"
-        }
+    #     llm_config = {
+    #         "config_list": self.config_list,
+    #         "assistant_id": None,
+    #         "tools": [
+    #             {
+    #                 "type": "function",
+    #                 "function": send_action_tool_config
+    #             },
+    #         ],
+    #         "model": "gpt-4-1106-preview"
+    #     }
 
-        sql_assistant = GPTAssistantAgent(
-            name="Robot_Motion_Assistant",
-            instructions=system_messages['ROBOT_ASSISTANT_SYSTEM_MESSAGE'],
-            llm_config=llm_config
-        )
+    #     sql_assistant = GPTAssistantAgent(
+    #         name="Robot_Motion_Assistant",
+    #         instructions=system_messages['ROBOT_ASSISTANT_SYSTEM_MESSAGE'],
+    #         llm_config=llm_config
+    #     )
 
-        sql_assistant.register_function(
-            function_map=self.get_function_map()
-        )
+    #     sql_assistant.register_function(
+    #         function_map=self.get_function_map()
+    #     )
 
-        user_proxy = autogen.UserProxyAgent(
-            name="user_proxy",
-            is_termination_msg=lambda msg: "TERMINATE" in msg["content"],
-            code_execution_config=False,
-            human_input_mode="NEVER",
-            max_consecutive_auto_reply=3,
-        )
+    #     user_proxy = autogen.UserProxyAgent(
+    #         name="user_proxy",
+    #         is_termination_msg=lambda msg: "TERMINATE" in msg["content"],
+    #         code_execution_config=False,
+    #         human_input_mode="NEVER",
+    #         max_consecutive_auto_reply=3,
+    #     )
 
-        self.user_proxy = user_proxy
-        self.secondary_agent = sql_assistant
+    #     self.user_proxy = user_proxy
+    #     self.secondary_agent = sql_assistant
 
     def stuff_context(self, prompt):
         # Context stuffing
@@ -300,10 +300,11 @@ class RobotAgent(AgentBase):
         # self.user_proxy.initiate_chat(
         #     self.secondary_agent, message=prompt, clear_history=False, config_list=self.config_list)
 
-        if not self.groupchat_user_proxy or not self.groupchat_secondary_agent:
-            raise ValueError(f"Error occurred initiating the agents {self.groupchat_user_proxy}, {self.groupchat_secondary_agent}")
-        self.groupchat_user_proxy.initiate_chat(
-            self.groupchat_secondary_agent, message=prompt, clear_history=False, config_list=self.config_list)
+        if not self.user_proxy or not self.secondary_agent:
+            raise ValueError(f"Error occurred initiating the agents {self.user_proxy}, {self.secondary_agent}")
+        
+        self.user_proxy.initiate_chat(
+            self.secondary_agent, message=prompt, clear_history=False, config_list=self.config_list)
 
     def _continue(self, prompt):
         """Continue previous chat"""
@@ -312,6 +313,6 @@ class RobotAgent(AgentBase):
         #         f"Error occurred initiating the agents {self.user_proxy}, {self.secondary_agent}")
         # self.user_proxy.send(recipient=self.secondary_agent, message=prompt)
 
-        if not self.groupchat_user_proxy or not self.groupchat_secondary_agent:
-            raise ValueError(f"Error occurred initiating the agents {self.groupchat_user_proxy}, {self.groupchat_secondary_agent}")
-        self.groupchat_user_proxy.send(recipient=self.groupchat_secondary_agent, message=prompt)
+        if not self.user_proxy or not self.secondary_agent:
+            raise ValueError(f"Error occurred initiating the agents {self.user_proxy}, {self.secondary_agent}")
+        self.user_proxy.send(recipient=self.secondary_agent, message=prompt)

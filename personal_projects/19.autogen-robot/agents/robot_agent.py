@@ -26,7 +26,8 @@ class RobotAgent(AgentBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = kwargs.get('model', "gpt-4-1106-preview")
-        self.robot_motion_manager = RobotMotionManager(model=self.model)
+        self.robot_motion_manager = RobotMotionManager(model=self.model, env=)
+
         self.instantiate_two_way_chat()
 
     def get_system_messages(self):
@@ -61,11 +62,10 @@ class RobotAgent(AgentBase):
 
     def get_function_map(self):
         """
-        Updated function map to use ChromaDBManager's methods.
+        Updated function map to use RobotMotionManager's methods.
         """
         function_map = {
-            "t-pose": self.chroma_db_manager.query_db,
-            "kneel": self.chroma_db_manager.get_context
+            "send_action": self.robot_motion_manager.send_action,
         }
         return function_map
 
@@ -73,27 +73,15 @@ class RobotAgent(AgentBase):
         logging.info("Initializing Agents")
         system_messages = self.get_system_messages()
 
-        tpose_tool_config = {
-            "name": "tpose",
+        send_action_tool_config = {
+            "name": "send_action",
             "description": "Function to make the robot to stand in a T-pose, this is the defaul standing position.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query_texts": {"type": "array", "items": {"type": "string"}},
+                    "command": {"type": "string"},
                 },
-                "required": ["query_texts"]
-            }
-        }
-
-        kneel_tool_config = {
-            "name": "kneel",
-            "description": "Function to get the context from query results of the Chroma vector database.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "results": {"type": "object"}
-                },
-                "required": ["results"]
+                "required": ["command"]
             }
         }
 
@@ -103,12 +91,8 @@ class RobotAgent(AgentBase):
             "tools": [
                 {
                     "type": "function",
-                    "function": tpose_tool_config
+                    "function": send_action_tool_config
                 },
-                {
-                    "type": "function",
-                    "function": kneel_tool_config
-                }
             ],
             "model": "gpt-4-1106-preview"
         }

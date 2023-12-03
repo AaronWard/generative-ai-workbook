@@ -14,14 +14,41 @@ async def setup_agents(temperature: float,
     """Create Agent objects and set user session variables"""
     agent = RobotAgent(model=model)
                         
+    # # User Session Variables TODO: make this dynamic
+    # secondary_agent_name = agent.secondary_agent.name.replace("_", " ")
+    # user_proxy_name = agent.user_proxy.name.replace("_", " ")
+
+    # # Setting user session variables
+    # cl.user_session.set('agent', agent)
+    # cl.user_session.set(secondary_agent_name, agent.secondary_agent)
+    # cl.user_session.set(user_proxy_name, agent.user_proxy)    
+
+
+async def setup_agents(temperature: float,
+                        model: str,
+                        output_folder: str):
+    """Create Agent objects and set user session variables"""
+    agent = RobotAgent(model=model)
+    agent.clear_history(clear_previous_work=True)
+
+    # Setup subagent interactions
+    agent.instantiate_groupchat()
+
     # User Session Variables TODO: make this dynamic
-    secondary_agent_name = agent.secondary_agent.name.replace("_", " ")
-    user_proxy_name = agent.user_proxy.name.replace("_", " ")
+    two_way_secondary_agent_name = agent.two_way_secondary_agent.name.replace("_", " ")
+    two_way_user_proxy_name = agent.two_way_user_proxy.name.replace("_", " ")
 
     # Setting user session variables
     cl.user_session.set('agent', agent)
-    cl.user_session.set(secondary_agent_name, agent.secondary_agent)
-    cl.user_session.set(user_proxy_name, agent.user_proxy)    
+    cl.user_session.set(two_way_secondary_agent_name, agent.two_way_secondary_agent)
+    cl.user_session.set(two_way_user_proxy_name, agent.two_way_user_proxy)    
+
+    # groupchat_secondary_agent_name = agent.groupchat_secondary_agent.name.replace("_", " ") # name
+    # groupchat_user_proxy_name = agent.groupchat_user_proxy.name.replace("_", " ")  # admin_name
+    # cl.user_session.set(groupchat_secondary_agent_name, agent.groupchat_secondary_agent)
+    # cl.user_session.set(groupchat_user_proxy_name, agent.groupchat_user_proxy)
+
+
 
 
 async def setup_chat_settings():

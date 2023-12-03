@@ -26,7 +26,7 @@ class RobotAgent(AgentBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = kwargs.get('model', "gpt-4-1106-preview")
-        self.robot_motion_manager = RobotMotionManager(model=self.model, env=)
+        self.robot_motion_manager = RobotMotionManager(model=self.model)
 
         self.instantiate_two_way_chat()
 
@@ -47,12 +47,9 @@ class RobotAgent(AgentBase):
 
                 Key Points to Remember:
                 - Utilize Context: If the command relates to previous actions or instructions, take that into account to make informed decisions.
-                - Code Integration: When programming the robot, use the following format for clarity:
-                    ```python
-                    # Example Code
-                    move_forward(5)  # Move the robot forward by 5 units
-                    ```
-
+                - Tools: You send the action name to `send_action()` function. The following capabilities to you right now are "kneel_down" and "t-pose"
+                    You only pick from these two options, don't pass anything else to `send_action()`
+                
                 End your process with `TERMINATE` when no further instructions are given, to indicate that the task is complete.
                 """
             )
@@ -75,7 +72,7 @@ class RobotAgent(AgentBase):
 
         send_action_tool_config = {
             "name": "send_action",
-            "description": "Function to make the robot to stand in a T-pose, this is the defaul standing position.",
+            "description": "Function to send an action group name to command the raspberry pi robot",
             "parameters": {
                 "type": "object",
                 "properties": {

@@ -25,7 +25,7 @@ import plotly.graph_objects as go
 from dotenv import find_dotenv, load_dotenv
 from utils.ui_utils import (setup_chat_settings, setup_avatars, 
                             handle_message_indentation, send_final_response, 
-                            handle_text_file, handle_image_file, setup_agents, get_response)
+                            setup_agents, get_response)
 
 
 output_folder = "_output/"

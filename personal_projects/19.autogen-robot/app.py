@@ -113,13 +113,14 @@ async def setup_chat():
 @cl.on_message
 async def handle_message(user_message: dict):
     """Handle a message from a user"""
-    print(user_message.content)
-    if user_message.elements:
-        for element in user_message.elements:
-            if 'text/plain' in element.mime:
-                await handle_text_file(element)
-            elif 'image/' in element.mime:
-                await handle_image_file(element)
+    print(f"Received user message: {user_message.content}")
+    # if user_message.elements:
+    #     pass
+        # for element in user_message.elements:
+        #     if 'text/plain' in element.mime:
+        #         await handle_text_file(element)
+        #     elif 'image/' in element.mime:
+        #         await handle_image_file(element)
 
     last_user_message = cl.user_session.get('user_message')
     if user_message.content == last_user_message:

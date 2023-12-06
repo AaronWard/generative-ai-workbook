@@ -131,22 +131,6 @@ import chainlit as cl
 from agents.robot_agent import RobotAgent
 from autogen import GroupChat
 
-# async def setup_agents(temperature: float,
-#                         model: str,
-#                         output_folder: str):
-#     """Create Agent objects and set user session variables"""
-#     agent = RobotAgent(model=model)
-                        
-#     # # User Session Variables TODO: make this dynamic
-#     # secondary_agent_name = agent.secondary_agent.name.replace("_", " ")
-#     # user_proxy_name = agent.user_proxy.name.replace("_", " ")
-
-#     # # Setting user session variables
-#     # cl.user_session.set('agent', agent)
-#     # cl.user_session.set(secondary_agent_name, agent.secondary_agent)
-#     # cl.user_session.set(user_proxy_name, agent.user_proxy)    
-
-
 async def setup_agents(temperature: float,
                         model: str,
                         output_folder: str):
@@ -242,40 +226,55 @@ async def handle_message_indentation(naming_dict):
     
     """
     agent: RobotAgent = cl.user_session.get("agent")
-    group_chat = agent.user_proxy.groupchat  # Assuming groupchat attribute is accessible
+    group_chat = agent.groupchat  # Assuming groupchat attribute is accessible
 
     final_response = None
     last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
     new_message_history = group_chat.messages[last_seen_message_index:]
 
-    termination_msgs = ["TERMINATE", "TERMINATE."]
-    
     for i, message in enumerate(new_message_history):
-        content = message.get("content", "").strip()
+        print(message)
+
+        content = message.get("content", "")
+        if content:
+            content.strip()
         function_call = message.get("function_call", "")
 
-        if "TERMINATE" in content:
-            content = content.replace("TERMINATE.", "").replace("TERMINATE", "").strip()
-            if content == "" and i > 0:
-                final_response = new_message_history[i - 1].get("content", "").strip()
-                final_response = final_response.replace("TERMINATE.", "").replace("TERMINATE", "")
-                break
-            elif content != "":
-                final_response = content
-                break
-        else:
-            final_response = content
+        if content:
+            if "TERMINATE" in content:
+                content = content.replace("TERMINATE.", "").replace("TERMINATE", "").strip()
+                if content == ""  and  i > 0:
+                    final_response = new_message_history[i - 1].get("content", "").strip()
+                    final_response = final_response.replace("TERMINATE.", "").replace("TERMINATE", "")
+                    if final_response != "None":
+                        final_response = new_message_history[i - 2].get("content", "").strip()
+                    break
+                elif content != "":
+                    final_response = content
+                    final_response = final_response.strip().replace("TERMINATE.", "").replace("TERMINATE", "")
 
-        if content or function_call:
+                    break
+            else:
+                final_response = content
+
             await cl.Message(
                 author=naming_dict[message["role"]],
-                content=content if content else function_call,
+                content=content,
+                indent=1
+            ).send()
+
+        if function_call:
+            final_response = function_call
+            await cl.Message(
+                author=naming_dict[message["role"]],
+                content=function_call,
                 indent=1
             ).send()
 
     cl.user_session.set('last_seen_message_index', len(group_chat.messages))
-    if final_response:
+    if type(final_response) == str:
         final_response = final_response.strip().replace("TERMINATE.", "").replace("TERMINATE", "")
+
     return final_response
 
 async def get_response(user_message: str):

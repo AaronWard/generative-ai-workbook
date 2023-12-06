@@ -144,6 +144,7 @@ async def handle_message(user_message: dict):
 
         # Send final response if available
         await send_final_response(final_response)
+        print(type(final_response))
         print(f"Sent final_response")
 
     except Exception as e:

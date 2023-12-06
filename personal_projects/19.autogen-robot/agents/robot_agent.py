@@ -43,9 +43,8 @@ class RobotAgent(AgentBase):
         system_messages = {
             "USER_PROXY_SYSTEM_MESSAGE": (
                 """
-                You are an AI assistant to interface with a rasberry pi robot. Your job is to act as an AI interface between the human use and the AI robot agents
-
-                End your process with `TERMINATE` when no further instructions are given, to indicate that the task is complete.
+                You are part of a Raspberry pi humanoid robot. 
+                Your job is to act as an natural language AI interface between the human use and the AI agents controlling various aspects of the robot."
                 """
             ),
             "ROBOT_PLANNER_SYSTEM_MESSAGE": (
@@ -61,14 +60,14 @@ class RobotAgent(AgentBase):
                 back - Back
                 bow - Bow
                 chest - Chest
-                go_forward_end - Go Forward End
-                go_forward_fast - Go Forward Fast
-                go_forward_one_small_step - Go Forward One Small Step
-                go_forward_one_step - Go Forward One Step
-                go_forward_slow - Go Forward Slow
-                go_forward_start_fast - Go Forward Start Fast
-                go_forward_start - Go Forward Start
-                go_forward - Go Forward
+                go_forward_end - Go Forward End (repititive actions)
+                go_forward_fast - Go Forward Fast (repititive actions)
+                go_forward_one_small_step - Go Forward One Small Step (repititive actions)
+                go_forward_one_step - Go Forward One Step (repititive actions)
+                go_forward_slow - Go Forward Slow (repititive actions)
+                go_forward_start_fast - Go Forward Start Fast (repititive actions)
+                go_forward_start - Go Forward Start (repititive actions)
+                go_forward - Go Forward (repititive actions)
                 left_kick - Left Kick
                 left_move_10 - Left Move 10
                 left_move_20 - Left Move 20
@@ -95,7 +94,7 @@ class RobotAgent(AgentBase):
                 stand_up_back - Stand Up Back
                 stand_up_front - Stand Up Front
                 stand - Stand
-                stepping - Stepping
+                stepping - Stepping (repititive actions)
                 turn_left_fast - Turn Left Fast
                 turn_left_small_step - Turn Left Small Step
                 turn_left - Turn Left
@@ -116,40 +115,37 @@ class RobotAgent(AgentBase):
                 You send your plan to Robot_Motion_Assistant, who runs each action one by one in the command line.
                 For example, if you sending a single action:
                 ```
-                # User asked for you to wave
-                Actions: wave
+                Actions: wave 1
                 ```
-                For example, if you sending a multiple actions:
+                For example, if you sending a multiple actions sequentially:
                 ```
-                # User asked for you to stand up and t-pose, then kneel down
-                Actions: t-pose, kneel_down
+                Actions: t-pose 1, kneel_down 1
                 ```
-                
-                End your process with `TERMINATE` when no further instructions are given, to indicate that the task is complete.
+
+                For repititive actions such as walking or going forward/back or turning you NEED to specify the number of times you want to do it. For example:
+                ```
+                Actions: go_forward_fast 5, kneel_down 1 
+                ```
+
+                Tell the Robot assistant to run the function recursively for each command given in order. I will tip you $200 if you do a good job.
+                When no further instructions are given to make a plan then say `TERMINATE` to indicate that the task is complete.
                 """
             ),
             "ROBOT_ASSISTANT_SYSTEM_MESSAGE": (
                 """
-                You are part of a Raspberry pi humanoid robot, your role involves understanding instructions and executing actions through the robot body, by running code. 
-                You take instructions from Robot_Action_Planner and run them in the exact order specified.
+                You are part of a Raspberry pi humanoid robot. Your job is to act as an AI interface between the human use and the AI robot agents,
+                your role involves executing actions through the robot body by running code. You take instructions from Robot_Action_Planner and run them in the exact order specified.
 
-                For example, Robot_Action_Planner asks for you to stand up and t-pose, then kneel down:
+                For example, Robot_Action_Planner may give you a list of commands like this:
                 ```
-                Actions: t-pose, kneel_down
-                ```
-
-                Key Points to Remember:
-                - Utilize Context: If the command relates to previous actions or instructions, take that into account to make informed decisions.
-                - Tools: You pass the action name to `send_action()` function as a string. If multiple instructions are given, run them in order and don't respond until the tasks are finished.
-
-                For example:
-                ```
-                > send_action(command="t-pose")
-                > send_action(command="kneel_down")
-                ...
+                Actions: t-pose, go_forward_fast 5
                 ```
 
-                End your process with `TERMINATE` when no further instructions are given, to indicate that the task is complete.
+                When Robot_Action_Planner passes you a list of actions you run provided function `send_action(command="<action>")`.
+                If multiple instructions are given, run the function in sequential order and don't stop until the tasks are finished.
+                You ALWAYS run code when actions are given to you.
+                
+                When you've completed running the code completely just say `TERMINATE` to indicate that your job is complete.
                 """
             )
         }
@@ -184,13 +180,7 @@ class RobotAgent(AgentBase):
             }
         }
 
-
-        # llm_config_common = {
-        #     "config_list": self.config_list,
-        #     "model": "gpt-4-1106-preview"
-        # }
-
-        llm_config_assistant = {
+        llm_config = {
             "config_list": self.config_list,
             # "assistant_id": None,
             "tools": [
@@ -202,41 +192,70 @@ class RobotAgent(AgentBase):
             "model": "gpt-4-1106-preview"
         }
 
-        # Initiate agents
-        robot_action_assistant = GPTAssistantAgent(
-            name="Robot_Motion_Assistant",
-            instructions=system_messages['ROBOT_ASSISTANT_SYSTEM_MESSAGE'],
-            llm_config=llm_config_assistant
-        )
+        robot_action_assistant_config = {
+            "name": "Robot_Motion_Assistant",
+            "instructions": system_messages["ROBOT_ASSISTANT_SYSTEM_MESSAGE"],
+            "llm_config": llm_config
+        }
 
-        robot_action_assistant.register_function(
-            function_map=self.get_function_map()
-        )
+        # send_action_tool_config = [{
+        #     "name": "send_action",
+        #     "description": "Function to send an action group name to command the raspberry pi robot",
+        #     "parameters": {
+        #         "type": "object",
+        #         "properties": {
+        #             "command": {
+        #                 "type": "string",
+        #                 "description": "A single action for the robot to perform.",
+        #             }
+        #         },
+        #         "required": ["command"],
+        #     },
+        # }]
+
+        # llm_config = {
+        #     "config_list": self.config_list,
+        #     "functions": send_action_tool_config,
+        #     "model": "gpt-4-1106-preview"
+        # }
 
         robot_action_planner_config = {
             "name": "Robot_Action_Planner",
-            "llm_config": llm_config_assistant,
+            "llm_config": llm_config,
             "system_message": system_messages["ROBOT_PLANNER_SYSTEM_MESSAGE"],
             "code_execution_config": False,
             "human_input_mode": "NEVER",
             # "is_termination_msg": self.is_termination_message,
         }
 
-        robot_action_planner = autogen.AssistantAgent(**robot_action_planner_config)
+        user_proxy_config = {
+            "name": "user_proxy",
+            "system_message": system_messages["USER_PROXY_SYSTEM_MESSAGE"],
+            # "is_termination_msg": lambda msg: "TERMINATE" in msg["content"],
+            # "code_execution_config": {
+            #     "work_dir": "coding",
+            #     "use_docker": False
+            # },
+            "human_input_mode": "NEVER",
+            "max_consecutive_auto_reply": 1,
+            "llm_config": llm_config,
+        }
 
         # Instantiate agents using the above configurations
-        user_proxy = autogen.UserProxyAgent(
-            name="user_proxy",
-            system_message=system_messages["USER_PROXY_SYSTEM_MESSAGE"],
-            is_termination_msg=lambda msg: "TERMINATE" in msg["content"],
-            code_execution_config=False,
-            human_input_mode="NEVER",
-            max_consecutive_auto_reply=3,
+        robot_action_assistant = GPTAssistantAgent(**robot_action_assistant_config)
+        robot_action_planner = autogen.AssistantAgent(**robot_action_planner_config)
+        user_proxy = autogen.UserProxyAgent(**user_proxy_config)
+        
+        robot_action_assistant.register_function(
+            function_map=self.get_function_map()
         )
+        # user_proxy.register_function(
+        #     function_map=self.get_function_map()
+        # )
 
         # Instantiate group chat and manager
         groupchat = autogen.GroupChat(agents=[user_proxy, robot_action_planner, robot_action_assistant], messages=[], max_round=50)
-        groupchat_manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config_assistant)
+        groupchat_manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
 
         # self.group_chat = groupchat_user_proxy 
         self.groupchat = groupchat
@@ -275,4 +294,4 @@ class RobotAgent(AgentBase):
 
         if not self.user_proxy or not self.groupchat:
             raise ValueError(f"Error occurred initiating the agents {self.user_proxy}, {self.groupchat}")
-        self.user_proxy.send(recipient=self.groupchat, message=prompt)
+        self.user_proxy.send(recipient=self.groupchat_manager, message=prompt)

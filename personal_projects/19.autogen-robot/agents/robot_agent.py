@@ -94,6 +94,7 @@ class RobotAgent(AgentBase):
                 stand_up_back - Stand Up Back
                 stand_up_front - Stand Up Front
                 stand - Stand
+                stand_adjusted - Stand correctly
                 stepping - Stepping (repititive actions)
                 turn_left_fast - Turn Left Fast
                 turn_left_small_step - Turn Left Small Step
@@ -122,12 +123,16 @@ class RobotAgent(AgentBase):
                 Actions: t-pose 1, kneel_down 1
                 ```
 
-                For repititive actions such as walking or going forward/back or turning you NEED to specify the number of times you want to do it. For example:
+                For repititive actions such as walking or going forward/back or turning you NEED to specify the number of times you want to do it by appending a number of repititions. 
+                Use contextual understanding to make a good estimate on how many repititions you should choose where appropriate.
+                For example, doing the same step 5 times:
                 ```
-                Actions: go_forward_fast 5, kneel_down 1 
+                Actions: go_forward_fast 5
                 ```
-
-                Tell the Robot assistant to run the function recursively for each command given in order. I will tip you $200 if you do a good job.
+                
+                Tell the Robot_Motion_Assistant to run the function recursively for each command given in order, but not including repetitive actions like `go_forward_fast 5`.
+                That is achieved by passing the number. I will tip you $200 if you do a good job.
+                
                 When no further instructions are given to make a plan then say `TERMINATE` to indicate that the task is complete.
                 """
             ),
@@ -138,11 +143,17 @@ class RobotAgent(AgentBase):
 
                 For example, Robot_Action_Planner may give you a list of commands like this:
                 ```
-                Actions: t-pose, go_forward_fast 5
+                Actions: t-pose 1, go_forward_fast 5
                 ```
 
                 When Robot_Action_Planner passes you a list of actions you run provided function `send_action(command="<action>")`.
                 If multiple instructions are given, run the function in sequential order and don't stop until the tasks are finished.
+                ```
+                >> send_action(command="t-pose 1")
+                >> send_action(command="go_forward_fast 5")
+                
+                ```
+
                 You ALWAYS run code when actions are given to you.
                 
                 When you've completed running the code completely just say `TERMINATE` to indicate that your job is complete.
@@ -225,17 +236,13 @@ class RobotAgent(AgentBase):
             "system_message": system_messages["ROBOT_PLANNER_SYSTEM_MESSAGE"],
             "code_execution_config": False,
             "human_input_mode": "NEVER",
-            # "is_termination_msg": self.is_termination_message,
+            "is_termination_msg": self.is_termination_message,
         }
 
         user_proxy_config = {
             "name": "user_proxy",
             "system_message": system_messages["USER_PROXY_SYSTEM_MESSAGE"],
             # "is_termination_msg": lambda msg: "TERMINATE" in msg["content"],
-            # "code_execution_config": {
-            #     "work_dir": "coding",
-            #     "use_docker": False
-            # },
             "human_input_mode": "NEVER",
             "max_consecutive_auto_reply": 1,
             "llm_config": llm_config,

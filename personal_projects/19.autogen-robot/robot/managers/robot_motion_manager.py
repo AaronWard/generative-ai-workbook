@@ -35,8 +35,7 @@ class RobotMotionManager:
         """
         Send terminal command to raspberry pi
         """
-
-        command = f"cd /home/pi/TonyPi/HiwonderSDK/hiwonder/ && python3 ActionGroupControl.py {command}"
+        command = f"cd /home/pi/github/tonypi-sdk/src/tonypisdk/controls && python3 action_group_controller.py {command}"
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 

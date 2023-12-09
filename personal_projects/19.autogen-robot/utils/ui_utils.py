@@ -156,7 +156,7 @@ async def setup_chat_settings():
                 values=["gpt-3.5-turbo",  "gpt-4-1106-preview", "gpt-4"],
                 initial_index=2
             ),
-            cl.input_widget.Slider(id="Temperature", label="Temperature (randomness)", initial=0.5, min=0, max=2, step=0.1),
+            cl.input_widget.Slider(id="Temperature", label="Temperature (randomness)", initial=0.9, min=0, max=2, step=0.1),
         ]
     ).send()
 

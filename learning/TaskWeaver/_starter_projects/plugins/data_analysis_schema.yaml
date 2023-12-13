@@ -1,0 +1,26 @@
+name: anomaly_detection
+enabled: true
+description: >
+  Anomaly detection function identifies anomalies from an input DataFrame of time series.
+
+parameters:
+  - name: df
+    type: DataFrame
+    required: true
+    description: The input data, must be a DataFrame.
+  - name: time_col_name
+    type: str
+    required: true
+    description: Name of the column that contains the datetime.
+  - name: value_col_name
+    type: str
+    required: true
+    description: Name of the column that contains the numeric values.
+
+returns:
+  - name: df
+    type: DataFrame
+    description: DataFrame with an additional column 'Is_Anomaly'.
+  - name: description
+    type: str
+    description: Description of the anomaly detection results.

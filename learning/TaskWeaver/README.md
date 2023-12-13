@@ -1,8 +1,5 @@
 ### TaskWeaver
 
-
-
-
 - **Planner**: Manages task decomposition and execution.
 - **Code Generator (CG)**: Generates Python code snippets from user requests, leveraging plugins and examples.
 - **Code Executor (CE)**: Executes generated code and maintains execution context.
@@ -16,7 +13,7 @@ https://github.com/microsoft/TaskWeaver.git
 ```
 git clone https://github.com/microsoft/TaskWeaver.git
 cd TaskWeaver
-pip install -r requirements.txt
+pip install -e . 
 ```
 
 
@@ -47,7 +44,7 @@ touch taskweaver_config.json
 cd .. # cd outside the project directory
 ```
 
-**Step 3: Update `taskweaver_config.json``
+**Step 3: Update `taskweaver_config.json`**
 Add this to the file, by leaving `llm.api_key` blank it will ask you in the terminal.
 ```json
 {
@@ -57,25 +54,16 @@ Add this to the file, by leaving `llm.api_key` blank it will ask you in the term
 }
 ```
 
-** Step 3: Run Taskweaver
+**Step 4: Run Taskweaver**
 
 You can run taskweaver in the CLI
 ```bash
 python -m taskweaver -p ./<project name>
 ```
 
-Or you can run as a library:
-```
-cd TaskWeaver
-pip install -e . 
-```
-
-
-
+Or you can run as a library (see notebooks for examples)
 
 ----
-
-
 
 ### Task Weaver vs Autogen:
 

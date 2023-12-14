@@ -64,17 +64,3 @@ python -m taskweaver -p ./<project name>
 Or you can run as a library (see notebooks for examples)
 
 ----
-
-### Task Weaver vs Autogen:
-
-
-**Task Weaver:**
-
-- **Code Generation:** TaskWeaver’s primary advantage lies in its code-first design, which is especially beneficial for applications requiring direct manipulation and processing of data. It’s an effective tool for workloads that require interacting with code and data structures over abstract conversational models.
-- Handling of complex data structures like pandas DataFrame.
-- There are 3 components: Planner, Code Generator (CG), and Code Executor (CE). Autogen architecture is different, where the agent that corresponds with the human is the one who executes code. 
-- TaskWeaver can be expanded into a multi-agent architecture for more complex projects and functionality.
- 
-**Autogen:**
-- Human-AI Collaboration: Autogen allows for human interaction within a conversation
-- Non data centric tasks: While TaskWeaver is ideal for data-centric tasks and analytics, AutoGen's capabilities extend to a broader range of dynamic, interactive applications. This makes AutoGen more versatile in handling diverse scenarios, from decision-making tasks to interactive games.

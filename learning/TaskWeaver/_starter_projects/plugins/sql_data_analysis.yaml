@@ -1,0 +1,6 @@
+name: sql_data_analysis 
+description: Performs a simple SQL Pull and return stats on the data.
+returns:
+  - name: description
+    type: string
+    description: Description of analysis results.

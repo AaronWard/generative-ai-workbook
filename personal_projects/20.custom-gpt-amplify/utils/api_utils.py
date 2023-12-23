@@ -17,27 +17,6 @@ load_dotenv()
 assert os.environ.get("OPENAI_API_KEY")
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-def get_available_models():
-    """
-    This function is for listing out all the
-    available models under the API key provided.  
-    
-    """
-    try:
-        response = requests.get(
-            "https://api.openai.com/v1/models",
-            headers={"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"}
-        )
-        if response.status_code == 200:
-            models = response.json()['data']
-            return [model['id'] for model in models]
-        else:
-            print("Error in getting available models: HTTP status code", response.status_code)
-            return []
-    except Exception as e:
-        print("Error in getting available models:", str(e))
-        return []
-
 
 """
 Purpose:
@@ -69,7 +48,7 @@ def response_parser(response: Dict[str, Any]):
 # ------------------ content generators ------------------
 
 
-def prompt(prompt: str, model: str = "gpt-4-1106-preview") -> str:
+def prompt(context: str, model: str = "gpt-4-1106-preview") -> str:
     # validate the openai api key - if it's not valid, raise an error
     if not openai.api_key:
         sys.exit(
@@ -79,6 +58,46 @@ Example bash command:
     export OPENAI_API_KEY=<your openai apikey>
             """
         )
+
+    prompt = f'''// Goal: Extract useful Q&A pairs from a given text.
+Here is the text snippet of interest:
+{context}
+
+
+// Requirements:
+// 1. Identify and compile 10 pairs of questions and answers.
+// 2. Exclude irrelevant conversational speech.
+// 3. Include complete URLs where relevant.
+// 4. Omit specific usernames, channels, or timestamps.
+// 5. Focus on general-use content, avoiding overly specific user conversations.
+// 6. When citing error messages, include the complete error while omitting personal identifiers like IDs or usernames.
+// 7. Where relevant, supplement answers with complete code snippets in a code block format.
+// Restrictions:
+// - Do not invent or create answers; rely solely on the provided text.
+
+// Instructions for AI:
+// Analyze the provided text, adhering to the above guidelines, to extract relevant and general Q&A pairs that would be beneficial for a broader audience. Ensure that each answer is clearly connected to its question, maintaining the integrity and context of the original discussion.
+
+// Here are some examples:
+```
+Question: How do I load an image for processing by an analyzer in Python?
+Answer: Use the following code to load an image from a specified file location for processing:
+```
+user_proxy.initiate_chat(designAnalyzer, message="""Load the image from the <img ./coding/design.jpg> file location for processing by an analyzer""")
+```
+
+Question: How do I install a specific version of Autogen with OpenAI?
+Answer: To install Autogen 0.2.0b5 with OpenAI 1.2.4, use the command:
+```
+pip install autogen==0.2.0b5
+```
+This resolves the issue with the error: InvalidRequestError: Invalid URL (POST /v1/openai/deployments/InnovationGPT4-32/chat/completions) encountered with earlier versions.
+
+Question: How do I integrate Autogen with a project using an older version of OpenAI?
+Answer: To integrate Autogen with a project using OpenAI 0.27.4, you might face compatibility issues. Autogen 0.1.14 raises an InvalidRequestError with OpenAI 0.28.1, while Autogen 0.2+ runs fine with OpenAI 1.0+. The compatibility must be checked between specific versions.
+```
+'''
+
 
     response = client.chat.completions.create(
         model=model,
@@ -91,22 +110,4 @@ Example bash command:
     )
 
     return response_parser(response)
-
-def add_cap_ref(
-    prompt: str, prompt_suffix: str, cap_ref: str, cap_ref_content: str
-) -> str:
-    """
-    Attaches a capitalized reference to the prompt.
-    Example
-        prompt = 'Refactor this code.'
-        prompt_suffix = 'Make it more readable using this EXAMPLE.'
-        cap_ref = 'EXAMPLE'
-        cap_ref_content = 'def foo():\n    return True'
-        returns 'Refactor this code. Make it more readable using this EXAMPLE.\n\nEXAMPLE\n\ndef foo():\n    return True'
-    """
-
-    new_prompt = f"""{prompt} {prompt_suffix}\n\n{cap_ref}\n\n{cap_ref_content}"""
-
-    return new_prompt
-
 

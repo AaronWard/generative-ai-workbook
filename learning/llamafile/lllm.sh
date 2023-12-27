@@ -27,7 +27,7 @@ lllm() {
                     echo "Shutting down server with PID $pid"
                     kill $pid
                 else
-                    echo "No running server found with PID $pid"
+                    echo "No running server found with  $pid"
                 fi
             done < "$SERVER_PID_FILE"
             > "$SERVER_PID_FILE" # Clear the PID file after shutdown
@@ -46,16 +46,16 @@ lllm() {
     # Determine the model file based on alias
     case "$model_alias" in
         mistral-main)
-            model_file="${MODEL_DIR}mistral-7b-instruct-v0.1-Q4_K_M-main.llamafile --nobrowser"
+            model_file="${MODEL_DIR}mistral-7b-instruct-v0.1-Q4_K_M-main.llamafile --nobrowser --log-disable"
             ;;
         mistral-server)
-            model_file="${MODEL_DIR}mistral-7b-instruct-v0.1-Q4_K_M-server.llamafile --port ${port} --nobrowser"
+            model_file="${MODEL_DIR}mistral-7b-instruct-v0.1-Q4_K_M-server.llamafile --port ${port} --nobrowser --log-disable"
             ;;
         wizard-main)
-            model_file="${MODEL_DIR}wizardcoder-python-13b-main.llamafile --nobrowser"
+            model_file="${MODEL_DIR}wizardcoder-python-13b-main.llamafile --nobrowser --log-disable"
             ;;
         wizard-server)
-            model_file="${MODEL_DIR}wizardcoder-python-13b-server.llamafile --port ${port} --nobrowser"
+            model_file="${MODEL_DIR}wizardcoder-python-13b-server.llamafile --port ${port} --nobrowser --log-disable"
             ;;
         *)
             echo "Unknown model alias: $model_alias"

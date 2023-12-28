@@ -148,6 +148,8 @@ Copy the downloaded hugging face `gguf` file into the folder
 ./llamafile -m ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf 
 ```
 
+./mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf
+
 > Write a simple python game using tkinter as the user interface. Think about what simple game you will make before implementing code. think it out step by step.
 
 ---

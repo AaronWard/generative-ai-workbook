@@ -17,6 +17,9 @@ __pycache__/
 **/wandb/
 */wandb/
 
+**/_install_llamafile/*
+*/_install_llamafile/*
+
 learning/TaskWeaver/_starter_projects/taskweaver_config.json
 **/workspace/sessions/*
 

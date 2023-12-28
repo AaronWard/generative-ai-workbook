@@ -113,10 +113,12 @@ chmod +x /Users/award40/Desktop/personal/github/_models/*
 
 ### 7. Running models via an API server:
 
-[See here](https://github.com/Mozilla-Ocho/llamafile/tree/main/llama.cpp/server#api-endpoints)
-
-
-This with produce a `llama.log` file. You can access the server by goig to [http://127.0.0.1:8081/completion](http://127.0.0.1:8081/completion)
+[See here](https://github.com/Mozilla-Ocho/llamafile/tree/main/llama.cpp/server#api-endpoints). 
+Firstly, start a server using the following command:
+```bash
+./mistral-7b-instruct-v0.1-Q4_K_M-server.llamafile --port 8081 --nobrowser --log-disable"
+```
+llamafile uses the OpenAI API for handling requests, you can make a request to the model running on the local server by sending a `POST` request to [http://127.0.0.1:8081/completion](http://127.0.0.1:8081/completion).
 
 <center>
 
@@ -133,8 +135,20 @@ This with produce a `llama.log` file. You can access the server by goig to [http
 
 ### Make a llamafile from an OSS model
 
-- `mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf`
+Make a folder and download the release of llamafile
+```bash
+mkdir _tmp
+cd _tmp
+curl -L https://github.com/Mozilla-Ocho/llamafile/releases/download/0.4/llamafile-server-0.4 >llamafile
+chmod +x llamafile
+```
+Copy the downloaded hugging face `gguf` file into the folder
 
+```bash
+./llamafile -m ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf 
+```
+
+> Write a simple python game using tkinter as the user interface. Think about what simple game you will make before implementing code. think it out step by step.
 
 ---
 

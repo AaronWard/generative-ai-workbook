@@ -113,6 +113,8 @@ chmod +x /Users/award40/Desktop/personal/github/_models/*
 
 ### 7. Running models via an API server:
 
+Use `lllm.sh` for streamlined creation spin up of llamafiles.
+
 [See here](https://github.com/Mozilla-Ocho/llamafile/tree/main/llama.cpp/server#api-endpoints). 
 Firstly, start a server using the following command:
 ```bash
@@ -135,56 +137,7 @@ llamafile uses the OpenAI API for handling requests, you can make a request to t
 
 ### Make a llamafile from an OSS model
 
-Make a folder and download the release of llamafile
-```bash
-mkdir _tmp
-cd _tmp
-curl -L https://github.com/Mozilla-Ocho/llamafile/releases/download/0.4/llamafile-server-0.4 >llamafile
-chmod +x llamafile
-```
-Copy the downloaded hugging face `gguf` file into the folder
-
-```bash
-./llamafile -m ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf 
-```
-
-./mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf
-
-> Write a simple python game using tkinter as the user interface. Think about what simple game you will make before implementing code. think it out step by step.
-
-
-sudo /Users/award40/Desktop/cosmocc/bin/make install PREFIX=/usr/local
-  534  cd ../../
-  535  ls
-  536  llamafile
-  537  llamafile ./mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf 
-  538  history
-  539  ls
-  540  echo "-m" > .args
-  541  echo "mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf" >> .args
-  542  echo "..." >> .args
-  543  cp /usr/local/bin/llamafile llamafile_exe
-  544  chmod +x llamafile_exe
-  545  zipalign -j0   llamafile_exe   mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf   .args
-  546  ls
-  547  ls -la
-  548  cp /usr/local/bin/llamafile mixtral-8x7b-instruct-v0.1.Q3_K_M.llamafile
-  549  chmod +x mixtral-8x7b-instruct-v0.1.Q3_K_M.llamafile
-  550  zipalign -j0   mixtral-8x7b-instruct-v0.1.Q3_K_M.llamafile   mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf   .args
-  551  ./ mixtral-8x7b-instruct-v0.1.Q3_K_M.llamafile 
-  552  ./mixtral-8x7b-instruct-v0.1.Q3_K_M.llamafile 
-  553  ./create_llamafile.sh ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf
-  554  ls
-  555  ./create_llamafile.sh ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf
-  556  sudo ./create_llamafile.sh ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf
-  557  sudo ./create_llamafile.sh ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf
-  558  ls
-  559  chmod +x && sudo create_llamafile.sh ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf
-  560  chmod +x create_llamafile.sh 
-  561  sudo ./create_llamafile.sh ./mixtral-8x7b-instruct-v0.1.Q2_K.gguf
-  562  history
-(base) LAMU0CLP74YXVX6:_install_llamafile award40$ 
-
+See `create_llamafile.sh` for streamlined process to generate the llamafiles. 
 
 ---
 

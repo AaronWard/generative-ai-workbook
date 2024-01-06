@@ -38,6 +38,8 @@ pygame
 wandb
 sentence_transformers
 psycopg2
+crewai
+duckduckgo-search
 
 # wikipedia==1.4.0
 # youtube-transcript-api==0.6.0

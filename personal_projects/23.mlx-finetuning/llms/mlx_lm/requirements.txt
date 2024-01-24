@@ -1,0 +1,4 @@
+mlx
+numpy
+transformers>=4.37.0
+protobuf

@@ -1,9 +1,3 @@
-"""
-This is the UI component to the multi agent framework application
-using chainlit and autogens GPT Assistant.
-
-Written by: Aaron Ward - Jan 2024.
-"""
 import os
 import json
 from pathlib import Path
@@ -16,10 +10,8 @@ import chainlit as cl
 import plotly.graph_objects as go
 
 from dotenv import find_dotenv, load_dotenv
-from utils.ui_utils import (setup_chat_settings, setup_avatars, 
-                            handle_message_parent_idation, send_final_response, 
-                            setup_agents, get_response)
-
+from utils.ui_utils import (setup_chat_settings, setup_avatars, handle_message_step_implementation, 
+                            send_final_response, setup_agents, get_response)
 
 output_folder = "_output/"
 logs_filename = f"{output_folder}_logs/conversations_{datetime.now().timestamp()}.json"
@@ -62,11 +54,10 @@ async def on_action(action):
     await action.remove()
     print(action.value)
 
-    action_msg = cl.Message(content=action.value, author="User",parent_id=0)
+    action_msg = cl.Message(content=action.value, author="User")
     await action_msg.send()
 
-    await handle_message(cl.Message(content=action.value, author="User",
-                     parent_id=0))
+    await handle_message_step_implementation(cl.Message(content=action.value, author="User"))
 
 @cl.on_chat_start
 async def setup_chat():
@@ -79,7 +70,7 @@ async def setup_chat():
             ),
     ]
 
-    # UI Configuirations
+    # UI Configurations
     await setup_avatars()
     await cl.Message(content=WELCOME_MESSAGE, author="chatbot", actions=actions).send()
 
@@ -93,36 +84,19 @@ async def setup_chat():
 ########################## Message Handling Functions ########################################
 
 @cl.on_message
-async def handle_message(user_message: dict):
+async def handle_message(msg: cl.Message):
     """Handle a message from a user"""
-            
-    last_user_message = cl.user_session.get('user_message')
     bytes = None
-    if user_message.content == last_user_message:
-        print(f"Received user message: {user_message.content}")
-
-        return
-    cl.user_session.set('user_message', user_message.content)
-
-    if user_message.elements:
+    
+    if msg.elements:
         print(f"Received user element")
-        for element in user_message.elements:
-            if 'image/' in element.mime:
-                bytes = element.content
+        images = [file for file in msg.elements if "image" in file.mime]
+        print(images)
+        if len(images) > 1:
+            await cl.Message(content="I can only handle one image at a time", author="chatbot").send()
+        else:
+            
+            bytes = images
+            print(bytes)
 
-    await cl.Message(
-            author="Image Analyzer",
-            content=user_message.content,
-            parent_id=1,
-    ).send()
-
-    try:
-        response = await get_response(user_message=user_message.content, bytes=bytes)
-        print(f"Make call to get_response...")
-
-        await send_final_response(response)
-        print(f"Sent final_response")
-    except Exception as e:
-        error_msg = f"An error occurred: {str(e)}"
-        await cl.Message(content=error_msg).send()
-        raise
+    # await get_response(user_message=msg.content, bytes=bytes) 

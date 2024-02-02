@@ -26,7 +26,7 @@ class AgentBase():
         """
         Initialize AgentBase with common configurations.
         """
-        self.model = kwargs.get('model', 'gpt-4-1106-preview')
+        self.model = kwargs.get('model', 'mistral')
         self.work_dir = kwargs.get('work_dir', "_output")
         self.cache_dir = kwargs.get('cache_dir', ".cache")
         self.temperature = kwargs.get('temperature', 0.2)
@@ -34,28 +34,6 @@ class AgentBase():
         # self.config_list = self.get_config_list()
         self.user_proxy = None
         self.secondary_agent = None
-
-    def get_config_list(self):
-        """
-        Get a list of configuration options for Autogen.
-
-        Returns:
-            list: List of configuration options.
-        """
-        config_list = autogen.config_list_from_dotenv(
-            dotenv_file_path=self.env_path,
-            model_api_key_map={
-                "gpt-4-1106-preview": "OPENAI_API_KEY",
-            },
-            filter_dict={
-                "model": {self.model}
-            }
-        )
-
-        if not config_list:
-            raise ValueError("Config list wasn't set, check configurations.")
-        logging.info("Models to use: %s", [c["model"] for c in config_list])
-        return config_list
 
     def is_termination_message(self, message):
         """

@@ -80,79 +80,27 @@ async def setup_avatars():
 
 # termination_msgs = ["TERMINATE", "TERMINATE."]
 
-async def handle_message_parent_idation(naming_dict):
+########################## Message Handling Functions ########################################
+
+async def handle_message_step_implementation(user_message):
     """
-    Handles message parent_idation for chainlit UI components. Within
-    a run of the Autogen agent conversations there may be messages inbetween
-    by agents conversing amongst themselves that we may want to see.
-    This sets them to an parent_idation level of 1, while the final response is 
-    set to parent_idation level 0.
-
-    There is no gaurantee that the last message in an Autogen conversation will be
-    the message we want, so the function provides functionality to ommitt messages
-    that are just termination messages, and removes termination messages from the 
-    final response we want. 
-    
-    There are different types of information that we make be interested in within the message
-    json keys, such as `content` and `function_call`, they need to accounted for when pulling from the message.
-
-    The function also updates some chainlit user session values for updating the UI.
-    
+    Handles the organization of messages using cl.Step()
     """
     agent: ImageAgent = cl.user_session.get("agent")
-    group_chat = agent.groupchat 
+    # group_chat = agent.groupchat
 
-    last_seen_message_index = cl.user_session.get('last_seen_message_index', 0)
-    new_message_history = group_chat.messages[last_seen_message_index:]
-    final_response = None
+    async with cl.Step(name="Agent Interaction") as step:
+        # Add messages between agents to the step
+        # Example usage, customize as per your actual logic
+        step.input = user_message.content
+        response = await agent.run(prompt=user_message.content)
+        step.output = response
 
+    # Send final response at root level
+    await send_final_response(response)
 
-    for i, message in enumerate(new_message_history):
-        print(message)
-
-        content = message.get("content", "")
-        if content:
-            content.strip()
-        function_call = message.get("function_call", "")
-
-        if content:
-            if "TERMINATE" in content:
-                content = content.replace("TERMINATE.", "").replace("TERMINATE", "").strip()
-                if content == ""  and  i > 0:
-                    final_response = new_message_history[i - 1].get("content", "").strip()
-                    final_response = final_response.replace("TERMINATE.", "").replace("TERMINATE", "")
-                    if final_response != "None":
-                        final_response = new_message_history[i - 2].get("content", "").strip()
-                    break
-                elif content != "":
-                    final_response = content
-                    final_response = final_response.strip().replace("TERMINATE.", "").replace("TERMINATE", "")
-
-                    break
-            else:
-                final_response = content
-
-            await cl.Message(
-                author=naming_dict[message["role"]],
-                content=content,
-                parent_id=1
-            ).send()
-
-        if function_call:
-            final_response = function_call
-            await cl.Message(
-                author=naming_dict[message["role"]],
-                content=function_call,
-                parent_id=1
-            ).send()
-
-    cl.user_session.set('last_seen_message_index', len(group_chat.messages))
-    if type(final_response) == str:
-        final_response = final_response.strip().replace("TERMINATE.", "").replace("TERMINATE", "")
-
-    return final_response
-
-async def get_response(user_message: str, bytes: str):
+async def get_response(user_message: str, bytes: Union[str, None]):
+    """Obtain a response for the given user message and image bytes if applicable"""
     agent: ImageAgent = cl.user_session.get("agent")
     return await cl.make_async(agent.run)(prompt=user_message, bytes=bytes)
 
@@ -169,3 +117,10 @@ async def send_final_response(final_response):
             content="Sorry, please try again. we got lost in thought...",
             parent_id=0
         ).send()
+
+async def send_final_response(final_response):
+    """Send the final response to the user at root level"""
+    if final_response:
+        await cl.Message(author="chatbot", content=final_response).send()
+    else:
+        await cl.Message(author="chatbot", content="Sorry, please try again. We got lost in thought...").send()

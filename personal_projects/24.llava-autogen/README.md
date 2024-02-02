@@ -6,6 +6,10 @@ An example using Llava on Ollama and autogen
 
 ## Setting up model:
 
+`litellm --model ollama/mistral`
+`litellm --model ollama/llava`
+
+
 Run ollama server locally
 - `OLLAMA_HOST=127.0.0.1:5050 ollama serve`
 

@@ -11,6 +11,6 @@ Approach outline steps:
 ---
 
 ### Running Taskwevaer
-```
+```bash
 python -m taskweaver -p ./project/
 ```

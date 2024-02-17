@@ -6,3 +6,4 @@ config
 experience
 
 taskweaver_config.json
+./plugins/web_search.yaml

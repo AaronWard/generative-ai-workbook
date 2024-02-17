@@ -1,5 +1,5 @@
 name: web_search
-enabled: false
+enabled: true
 required: false
 plugin_only: true
 description: >-
@@ -34,7 +34,7 @@ returns:
 
 configurations:
   # support one of "bing" or "google", need to configure API key below
-  provider: bing # bing or google
+  api_provider: bing # bing or google
   result_count: 3 # number of result, should be a small number less then 10
 
   # Bing Web Search API
@@ -42,7 +42,7 @@ configurations:
   #
   # register search resource on Azure Portal: https://aka.ms/bingapisignup
   # get api key from the registered resource
-  bing_api_key:
+  bing_api_key: 2f8d587615eb4be08ae5a4454a674196
 
   # Google Custom Search
   # https://developers.google.com/custom-search/v1/overview

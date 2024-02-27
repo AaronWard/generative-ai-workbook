@@ -22,6 +22,13 @@ class Game:
         self.people = []
         self.dialog_font = pygame.font.Font(None, 18) 
         
+        self.active_text_input = False
+        self.text_input = ''
+        self.text_input_color = pygame.Color('dodgerblue2')
+        self.text_input_rect = pygame.Rect(100, config.SCREEN_HEIGHT - 40, config.SCREEN_WIDTH - 200, 32)
+        self.message_response = None
+        self.message_timer = 0
+
     def set_up(self):
         """Set the player on the map"""
         player = Player(10, 10)
@@ -39,20 +46,55 @@ class Game:
         self.screen.fill(config.BLACK)
         self.handle_events()
         self.map.render(self.player, self.objects)
-        self.person_to_chat_with = self.scan_around_player()  # Store the name of the person to chat with
+        self.person_to_chat_with = self.scan_around_player()  # Store the person object to chat with
         if self.person_to_chat_with:
-            self.render_chat_button(self.person_to_chat_with) 
-            
+            self.render_chat_button(f"{self.person_to_chat_with.name}") 
+        if self.active_text_input:
+            self.render_text_input()  # New method to render text input
+        if self.message_response and pygame.time.get_ticks() < self.message_timer:
+            self.render_message_response()
+        else:
+            self.message_response = None  # Reset message when timer expires
+
+    def render_text_input(self):
+        txt_surface = self.dialog_font.render(self.text_input, True, self.text_input_color)
+        pygame.draw.rect(self.screen, self.text_input_color, self.text_input_rect, 2)
+        self.screen.blit(txt_surface, (self.text_input_rect.x+5, self.text_input_rect.y+5))
+
+    def render_message_response(self):
+        if not self.person_to_chat_with:
+            return
+        npc_x, npc_y = self.person_to_chat_with.position
+        bubble_x = npc_x * config.TILE_SIZE
+        bubble_y = npc_y * config.TILE_SIZE - 100  # Adjust based on your NPC's height and bubble size
+        for i, line in enumerate(self.message_response):
+            text_surface = self.dialog_font.render(line, True, (0, 0, 0))
+            self.screen.blit(text_surface, (bubble_x, bubble_y + i*20))  # Adjust spacing and positioning as needed
+
 
     def handle_events(self):
-        """Process different events"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.game_state = GameState.ENDED
             elif event.type == pygame.KEYDOWN:
-                self.process_key_event(event)
+                if self.active_text_input:
+                    if event.key == pygame.K_RETURN:
+                        print(f"Input: {self.text_input}")
+                        self.chat_with_person()
+                        self.active_text_input = False
+                        self.text_input = ''  # Reset text input
+                    elif event.key == pygame.K_BACKSPACE:
+                        self.text_input = self.text_input[:-1]
+                    else:
+                        self.text_input += event.unicode
+                else:
+                    if event.key == pygame.K_ESCAPE:
+                        self.game_state = GameState.ENDED
+                    else:
+                        self.move_player(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.process_mouse_event(event)
+
 
     def process_key_event(self, event):
         """Handler for key strokes"""
@@ -62,10 +104,10 @@ class Game:
             self.move_player(event.key)
     
     def process_mouse_event(self, event):
-        """ Process click from mouse event """
         x, y = event.pos
         if hasattr(self, 'chat_button_rect') and self.chat_button_rect.collidepoint(x, y):
-            self.chat_with_person()
+            self.active_text_input = True
+
             
     def move_player(self, key):
         """Move sprite based on movements"""
@@ -139,78 +181,20 @@ class Game:
 
 
     def chat_with_person(self):
-            """Action call for when chat button is clicked"""
-            if self.person_to_chat_with:
-                # 1. Remove the chat button
-                self.chat_button_rect = None  # This line already effectively removes the button
+        # Assuming ollama's chat call is synchronous and blocking; if not, adjust accordingly
+        response = ollama.chat(model='mistral:latest', messages=[
+            {
+                'role': 'user',
+                'content': self.text_input,
+                'temperature': 0.01,
+            },
+        ])
+        self.display_message_response(response['message']['content'])
 
-                # 2. Provide a text box for the message input
-                input_box = pygame.Rect(100, 100, 140, 32)  # Adjust position and size as needed
-                color_inactive = pygame.Color('lightskyblue3')
-                color_active = pygame.Color('dodgerblue2')
-                color = color_inactive
-                active = False
-                text = ''
+    def display_message_response(self, text):
+        self.message_response = self.wrap_text(text, 220)  # Adjust width as needed
+        self.message_timer = pygame.time.get_ticks() + 5000  # Display for 5 seconds
 
-                done = False
-                while not done:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            done = True
-                            pygame.quit()
-                        if event.type == pygame.MOUSEBUTTONDOWN:
-                            if input_box.collidepoint(event.pos):
-                                active = not active
-                            else:
-                                active = False
-                            color = color_active if active else color_inactive
-                        if event.type == pygame.KEYDOWN:
-                            if active:
-                                if event.key == pygame.K_RETURN:
-                                    done = True
-                                elif event.key == pygame.K_BACKSPACE:
-                                    text = text[:-1]
-                                else:
-                                    text += event.unicode
-
-                    self.screen.fill((30, 30, 30))
-                    txt_surface = self.dialog_font.render(text, True, color)
-                    width = max(200, txt_surface.get_width()+10)
-                    input_box.w = width
-                    self.screen.blit(txt_surface, (input_box.x+5, input_box.y+5))
-                    pygame.draw.rect(self.screen, color, input_box, 2)
-
-                    pygame.display.flip()
-
-                # 3. Use ollama to interact with the LLM
-                response = ollama.chat(model='mistral:latest', messages=[
-                    {
-                        'role': 'user',
-                        'content': text,
-                        'temperature': 0.01,
-                    },
-                ])
-
-                # 4. Display the response in a speech bubble
-                dialog_img = pygame.image.load('imgs/dialog.png')  # Load the speech bubble image
-                response_text = response['message']['content']
-                wrapped_text = self.wrap_text(response_text, 300)  # Assuming a width of 220 pixels for text
-                dialog_surface = pygame.Surface((dialog_img.get_width(), dialog_img.get_height()))
-                dialog_surface.blit(dialog_img, (0, 0))
-                y_offset = 10  # Start drawing text slightly below the top of the bubble
-                for line in wrapped_text:
-                    text_surface = self.dialog_font.render(line, True, (0, 0, 0))
-                    dialog_surface.blit(text_surface, (10, y_offset))
-                    y_offset += self.dialog_font.get_height() + 2  # Move down for the next line
-
-                # Position the speech bubble above the NPC
-                npc_x, npc_y = self.person_to_chat_with.position
-                bubble_x = npc_x * config.TILE_SIZE - dialog_surface.get_width() / 2
-                bubble_y = npc_y * config.TILE_SIZE - dialog_surface.get_height() - 20
-                self.screen.blit(dialog_surface, (bubble_x, bubble_y))
-
-                pygame.display.flip()
-                pygame.time.wait(5000)
 
     def wrap_text(self, text, width):
         """Wrap text for drawing within a certain width."""

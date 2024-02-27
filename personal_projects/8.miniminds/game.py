@@ -21,13 +21,16 @@ class Game:
         self.map = Map(screen) 
         self.people = []
         self.dialog_font = pygame.font.Font(None, 18) 
-        
+        self.show_chat_button = True 
         self.active_text_input = False
         self.text_input = ''
         self.text_input_color = pygame.Color('dodgerblue2')
         self.text_input_rect = pygame.Rect(100, config.SCREEN_HEIGHT - 40, config.SCREEN_WIDTH - 200, 32)
         self.message_response = None
         self.message_timer = 0
+        self.dialog_image = pygame.image.load('imgs/dialog.png').convert_alpha()
+        # Scale the image to the new size (e.g., width=200, height=100 pixels)
+        self.dialog_image_scaled = pygame.transform.scale(self.dialog_image, (200, 100))
 
     def set_up(self):
         """Set the player on the map"""
@@ -47,18 +50,21 @@ class Game:
         self.handle_events()
         self.map.render(self.player, self.objects)
         self.person_to_chat_with = self.scan_around_player()  # Store the person object to chat with
-        if self.person_to_chat_with:
+        if self.person_to_chat_with and self.show_chat_button:
             self.render_chat_button(f"{self.person_to_chat_with.name}") 
         if self.active_text_input:
-            self.render_text_input()  # New method to render text input
+            self.render_text_input()  # Render text input with white background
         if self.message_response and pygame.time.get_ticks() < self.message_timer:
             self.render_message_response()
         else:
             self.message_response = None  # Reset message when timer expires
-
+            
     def render_text_input(self):
-        txt_surface = self.dialog_font.render(self.text_input, True, self.text_input_color)
+        # Fill background with white
+        pygame.draw.rect(self.screen, pygame.Color('white'), self.text_input_rect)
+        # Draw border
         pygame.draw.rect(self.screen, self.text_input_color, self.text_input_rect, 2)
+        txt_surface = self.dialog_font.render(self.text_input, True, self.text_input_color)
         self.screen.blit(txt_surface, (self.text_input_rect.x+5, self.text_input_rect.y+5))
 
     def render_message_response(self):
@@ -66,10 +72,15 @@ class Game:
             return
         npc_x, npc_y = self.person_to_chat_with.position
         bubble_x = npc_x * config.TILE_SIZE
-        bubble_y = npc_y * config.TILE_SIZE - 100  # Adjust based on your NPC's height and bubble size
+        bubble_y = npc_y * config.TILE_SIZE - 10  # Adjust based on your NPC's height and bubble size
+        
+        # Blit the scaled dialog image instead of the original one
+        self.screen.blit(self.dialog_image_scaled, (bubble_x - 10, bubble_y - 5))  # Adjust positioning as needed
+        
         for i, line in enumerate(self.message_response):
             text_surface = self.dialog_font.render(line, True, (0, 0, 0))
-            self.screen.blit(text_surface, (bubble_x, bubble_y + i*20))  # Adjust spacing and positioning as needed
+            # Adjust text blitting to fit within the scaled dialog bubble
+            self.screen.blit(text_surface, (bubble_x, bubble_y + i*10))  # Adjust spacing and positioning as needed
 
 
     def handle_events(self):
@@ -107,6 +118,7 @@ class Game:
         x, y = event.pos
         if hasattr(self, 'chat_button_rect') and self.chat_button_rect.collidepoint(x, y):
             self.active_text_input = True
+            self.show_chat_button = False  # Hide chat button when clicked
 
             
     def move_player(self, key):
@@ -171,18 +183,10 @@ class Game:
         self.screen.blit(text, button_rect)
         self.chat_button_rect = button_rect
         
-    # def chat_with_person(self):
-    #     """Action call for when chat button is clicked"""
-    #     if self.person_to_chat_with:
-    #         # Assuming person_to_chat_with is a Person object, not just the name
-    #         self.chat_button_rect = None
-    #         self.event = ChatWithPersonEvent(self.screen, self, self.person_to_chat_with)
-    #         print(f"You are now chatting with {self.person_to_chat_with.name}.")  
-
-
     def chat_with_person(self):
         # Assuming ollama's chat call is synchronous and blocking; if not, adjust accordingly
-        response = ollama.chat(model='mistral:latest', messages=[
+        # response = ollama.chat(model='mistral:latest', messages=[
+        response = ollama.chat(model='qwen:0.5b', messages=[
             {
                 'role': 'user',
                 'content': self.text_input,
@@ -190,9 +194,11 @@ class Game:
             },
         ])
         self.display_message_response(response['message']['content'])
+        self.show_chat_button = True  # Show the chat button again after chatting, if needed
+
 
     def display_message_response(self, text):
-        self.message_response = self.wrap_text(text, 220)  # Adjust width as needed
+        self.message_response = self.wrap_text(text, 100)  # Adjust width as needed
         self.message_timer = pygame.time.get_ticks() + 5000  # Display for 5 seconds
 
 

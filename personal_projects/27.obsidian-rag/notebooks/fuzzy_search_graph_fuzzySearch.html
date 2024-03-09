@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1000px;
+                 height: 500px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "LoRA", "label": "LoRA", "shape": "dot", "size": 20, "title": "LoRA"}, {"color": "#97c2fc", "id": "Common Time Series Metrics.md", "label": "Common Time Series Metrics.md", "shape": "dot", "size": 10, "title": "Score: -2.9457"}, {"color": "#97c2fc", "id": "0. ML Pipelines.md", "label": "0. ML Pipelines.md", "shape": "dot", "size": 10, "title": "Score: -2.9273000000000002"}, {"color": "#97c2fc", "id": "Distilation.md", "label": "Distilation.md", "shape": "dot", "size": 10, "title": "Score: -2.9220999999999995"}, {"color": "#97c2fc", "id": "30 - Releases \u0026 Semantic Versioning.md", "label": "30 - Releases \u0026 Semantic Versioning.md", "shape": "dot", "size": 10, "title": "Score: -2.8956"}, {"color": "#97c2fc", "id": "Personalized  Edge Device AI for Visually Impaired.md", "label": "Personalized  Edge Device AI for Visually Impaired.md", "shape": "dot", "size": 10, "title": "Score: -2.8855000000000004"}, {"color": "#97c2fc", "id": "Retrieval-Augmented Generation (RAG).md", "label": "Retrieval-Augmented Generation (RAG).md", "shape": "dot", "size": 10, "title": "Score: -2.8847999999999994"}, {"color": "#97c2fc", "id": "12 - Glossary (ML Pipelines).md", "label": "12 - Glossary (ML Pipelines).md", "shape": "dot", "size": 10, "title": "Score: -2.8801"}, {"color": "#97c2fc", "id": "26 - Export inference pipeline.md", "label": "26 - Export inference pipeline.md", "shape": "dot", "size": 10, "title": "Score: -2.8432"}, {"color": "#97c2fc", "id": "NLP Preprocessing.md", "label": "NLP Preprocessing.md", "shape": "dot", "size": 10, "title": "Score: -2.84"}, {"color": "#97c2fc", "id": "9 - API Deployment with Fast API.md", "label": "9 - API Deployment with Fast API.md", "shape": "dot", "size": 10, "title": "Score: -2.8365"}, {"color": "#97c2fc", "id": "1. Scoping an ML Project.md", "label": "1. Scoping an ML Project.md", "shape": "dot", "size": 10, "title": "Score: -2.8345000000000002"}, {"color": "#97c2fc", "id": "4. Versioning Data and Artifacts.md", "label": "4. Versioning Data and Artifacts.md", "shape": "dot", "size": 10, "title": "Score: -2.8049"}, {"color": "#97c2fc", "id": "Assessing for Overfitting.md", "label": "Assessing for Overfitting.md", "shape": "dot", "size": 10, "title": "Score: -2.7899000000000003"}, {"color": "#97c2fc", "id": "ARIMA.md", "label": "ARIMA.md", "shape": "dot", "size": 10, "title": "Score: -2.7545"}, {"color": "#97c2fc", "id": "GDScript.md", "label": "GDScript.md", "shape": "dot", "size": 10, "title": "Score: -2.7516000000000003"}, {"color": "#97c2fc", "id": "2. Data Version Control (DVC).md", "label": "2. Data Version Control (DVC).md", "shape": "dot", "size": 10, "title": "Score: -2.7408"}, {"color": "#97c2fc", "id": "MambaByte.md", "label": "MambaByte.md", "shape": "dot", "size": 10, "title": "Score: -2.73"}, {"color": "#97c2fc", "id": "Self-consistency CoT.md", "label": "Self-consistency CoT.md", "shape": "dot", "size": 10, "title": "Score: -2.6867"}, {"color": "#97c2fc", "id": "Reinforcement Learning from Human Feedback (RLHF).md", "label": "Reinforcement Learning from Human Feedback (RLHF).md", "shape": "dot", "size": 10, "title": "Score: -2.6858"}, {"color": "#97c2fc", "id": "In-Context Learning (ICL).md", "label": "In-Context Learning (ICL).md", "shape": "dot", "size": 10, "title": "Score: -2.6814"}, {"color": "#97c2fc", "id": "Zero-Shot CoT.md", "label": "Zero-Shot CoT.md", "shape": "dot", "size": 10, "title": "Score: -2.6787"}, {"color": "#97c2fc", "id": "4. Define Data and Establish baseline.md", "label": "4. Define Data and Establish baseline.md", "shape": "dot", "size": 10, "title": "Score: -2.6773000000000002"}, {"color": "#97c2fc", "id": "4. Great Expectations.md", "label": "4. Great Expectations.md", "shape": "dot", "size": 10, "title": "Score: -2.6686"}, {"color": "#97c2fc", "id": "1. Data Integrity and Stability.md", "label": "1. Data Integrity and Stability.md", "shape": "dot", "size": 10, "title": "Score: -2.6632000000000002"}, {"color": "#97c2fc", "id": "ReAct.md", "label": "ReAct.md", "shape": "dot", "size": 10, "title": "Score: -2.6383"}, {"color": "#97c2fc", "id": "Heroku.md", "label": "Heroku.md", "shape": "dot", "size": 10, "title": "Score: -2.6023000000000005"}, {"color": "#97c2fc", "id": "6. Validating Data.md", "label": "6. Validating Data.md", "shape": "dot", "size": 10, "title": "Score: -2.5655"}, {"color": "#97c2fc", "id": "TD-IDF.md", "label": "TD-IDF.md", "shape": "dot", "size": 10, "title": "Score: -2.5376000000000003"}, {"color": "#97c2fc", "id": "Support Vector Machine.md", "label": "Support Vector Machine.md", "shape": "dot", "size": 10, "title": "Score: -2.5362000000000005"}, {"color": "#97c2fc", "id": "7. Deployment.md", "label": "7. Deployment.md", "shape": "dot", "size": 10, "title": "Score: -2.4736"}, {"color": "#97c2fc", "id": "Chain of Thought (CoT).md", "label": "Chain of Thought (CoT).md", "shape": "dot", "size": 10, "title": "Score: -2.4436999999999998"}, {"color": "#97c2fc", "id": "2. Business Stakeholders of an ML Project.md", "label": "2. Business Stakeholders of an ML Project.md", "shape": "dot", "size": 10, "title": "Score: -2.4388"}, {"color": "#97c2fc", "id": "GraphQL.md", "label": "GraphQL.md", "shape": "dot", "size": 10, "title": "Score: -2.4360999999999997"}, {"color": "#97c2fc", "id": "3. Data Profiling.md", "label": "3. Data Profiling.md", "shape": "dot", "size": 10, "title": "Score: -2.43"}, {"color": "#97c2fc", "id": "VRAM vs. RAM.md", "label": "VRAM vs. RAM.md", "shape": "dot", "size": 10, "title": "Score: -2.4161"}, {"color": "#97c2fc", "id": "Step Back Prompting.md", "label": "Step Back Prompting.md", "shape": "dot", "size": 10, "title": "Score: -2.4097"}, {"color": "#97c2fc", "id": "5. Collecting Data.md", "label": "5. Collecting Data.md", "shape": "dot", "size": 10, "title": "Score: -2.395"}, {"color": "#97c2fc", "id": "3. Human level Performance (HLP).md", "label": "3. Human level Performance (HLP).md", "shape": "dot", "size": 10, "title": "Score: -2.3763"}, {"color": "#97c2fc", "id": "Horror Game - Multiple personality LLM Agents.md", "label": "Horror Game - Multiple personality LLM Agents.md", "shape": "dot", "size": 10, "title": "Score: -2.3683"}, {"color": "#97c2fc", "id": "Self-Instruct.md", "label": "Self-Instruct.md", "shape": "dot", "size": 10, "title": "Score: -2.3455"}, {"color": "#97c2fc", "id": "Tree of Thoughts (ToT).md", "label": "Tree of Thoughts (ToT).md", "shape": "dot", "size": 10, "title": "Score: -2.3167"}, {"color": "#97c2fc", "id": "Zero-Shot.md", "label": "Zero-Shot.md", "shape": "dot", "size": 10, "title": "Score: -2.3093"}, {"color": "#97c2fc", "id": "LoftQ.md", "label": "LoftQ.md", "shape": "dot", "size": 10, "title": "Score: -2.3013"}, {"color": "#97c2fc", "id": "AdaLoRA.md", "label": "AdaLoRA.md", "shape": "dot", "size": 10, "title": "Score: -2.3002000000000002"}, {"color": "#97c2fc", "id": "LoKr.md", "label": "LoKr.md", "shape": "dot", "size": 10, "title": "Score: -2.3002000000000002"}, {"color": "#97c2fc", "id": "P-Tuning.md", "label": "P-Tuning.md", "shape": "dot", "size": 10, "title": "Score: -2.3002000000000002"}, {"color": "#97c2fc", "id": "LoHa.md", "label": "LoHa.md", "shape": "dot", "size": 10, "title": "Score: -2.3002000000000002"}, {"color": "#97c2fc", "id": "Electron JS.md", "label": "Electron JS.md", "shape": "dot", "size": 10, "title": "Score: -2.2641"}, {"color": "#97c2fc", "id": "GraphRAG.md", "label": "GraphRAG.md", "shape": "dot", "size": 10, "title": "Score: -2.2493"}, {"color": "#97c2fc", "id": "Godot.md", "label": "Godot.md", "shape": "dot", "size": 10, "title": "Score: -2.1702999999999997"}, {"color": "#97c2fc", "id": "31 - Deployment Options.md", "label": "31 - Deployment Options.md", "shape": "dot", "size": 10, "title": "Score: -1.7301"}, {"color": "#97c2fc", "id": "0. ML Lifecycle Overview.md", "label": "0. ML Lifecycle Overview.md", "shape": "dot", "size": 10, "title": "Score: -1.4985"}, {"color": "#97c2fc", "id": "6. Selecting and Training a Model.md", "label": "6. Selecting and Training a Model.md", "shape": "dot", "size": 10, "title": "Score: -1.4795"}, {"color": "#97c2fc", "id": "4. Error analysis and Performance Auditing.md", "label": "4. Error analysis and Performance Auditing.md", "shape": "dot", "size": 10, "title": "Score: -1.3437"}, {"color": "#97c2fc", "id": "5. Labelling Data.md", "label": "5. Labelling Data.md", "shape": "dot", "size": 10, "title": "Score: -1.3328"}, {"color": "#97c2fc", "id": "TFLOP.md", "label": "TFLOP.md", "shape": "dot", "size": 10, "title": "Score: -1.1938"}, {"color": "#97c2fc", "id": "Checkout GRAPHRag.md", "label": "Checkout GRAPHRag.md", "shape": "dot", "size": 10, "title": "Score: -1.1077000000000001"}, {"color": "#97c2fc", "id": "Pearl.md", "label": "Pearl.md", "shape": "dot", "size": 10, "title": "Score: -0.6349"}, {"color": "#97c2fc", "id": "Parameter-Efficient Fine-Tuning (PEFT).md", "label": "Parameter-Efficient Fine-Tuning (PEFT).md", "shape": "dot", "size": 10, "title": "Score: -0.4099"}, {"color": "#97c2fc", "id": "QLoRA.md", "label": "QLoRA.md", "shape": "dot", "size": 10, "title": "Score: -0.3177"}, {"color": "#97c2fc", "id": "LoRA.md", "label": "LoRA.md", "shape": "dot", "size": 10, "title": "Score: -0.25470000000000004"}, {"color": "#97c2fc", "id": "Quantization.md", "label": "Quantization.md", "shape": "dot", "size": 10, "title": "Score: -0.18000000000000002"}]);
+                  edges = new vis.DataSet([{"from": "LoRA", "to": "Common Time Series Metrics.md", "width": -2.9457}, {"from": "LoRA", "to": "0. ML Pipelines.md", "width": -2.9273000000000002}, {"from": "LoRA", "to": "Distilation.md", "width": -2.9220999999999995}, {"from": "LoRA", "to": "30 - Releases \u0026 Semantic Versioning.md", "width": -2.8956}, {"from": "LoRA", "to": "Personalized  Edge Device AI for Visually Impaired.md", "width": -2.8855000000000004}, {"from": "LoRA", "to": "Retrieval-Augmented Generation (RAG).md", "width": -2.8847999999999994}, {"from": "LoRA", "to": "12 - Glossary (ML Pipelines).md", "width": -2.8801}, {"from": "LoRA", "to": "26 - Export inference pipeline.md", "width": -2.8432}, {"from": "LoRA", "to": "NLP Preprocessing.md", "width": -2.84}, {"from": "LoRA", "to": "9 - API Deployment with Fast API.md", "width": -2.8365}, {"from": "LoRA", "to": "1. Scoping an ML Project.md", "width": -2.8345000000000002}, {"from": "LoRA", "to": "4. Versioning Data and Artifacts.md", "width": -2.8049}, {"from": "LoRA", "to": "Assessing for Overfitting.md", "width": -2.7899000000000003}, {"from": "LoRA", "to": "ARIMA.md", "width": -2.7545}, {"from": "LoRA", "to": "GDScript.md", "width": -2.7516000000000003}, {"from": "LoRA", "to": "2. Data Version Control (DVC).md", "width": -2.7408}, {"from": "LoRA", "to": "MambaByte.md", "width": -2.73}, {"from": "LoRA", "to": "Self-consistency CoT.md", "width": -2.6867}, {"from": "LoRA", "to": "Reinforcement Learning from Human Feedback (RLHF).md", "width": -2.6858}, {"from": "LoRA", "to": "In-Context Learning (ICL).md", "width": -2.6814}, {"from": "LoRA", "to": "Zero-Shot CoT.md", "width": -2.6787}, {"from": "LoRA", "to": "4. Define Data and Establish baseline.md", "width": -2.6773000000000002}, {"from": "LoRA", "to": "4. Great Expectations.md", "width": -2.6686}, {"from": "LoRA", "to": "1. Data Integrity and Stability.md", "width": -2.6632000000000002}, {"from": "LoRA", "to": "ReAct.md", "width": -2.6383}, {"from": "LoRA", "to": "Heroku.md", "width": -2.6023000000000005}, {"from": "LoRA", "to": "6. Validating Data.md", "width": -2.5655}, {"from": "LoRA", "to": "TD-IDF.md", "width": -2.5376000000000003}, {"from": "LoRA", "to": "Support Vector Machine.md", "width": -2.5362000000000005}, {"from": "LoRA", "to": "7. Deployment.md", "width": -2.4736}, {"from": "LoRA", "to": "Chain of Thought (CoT).md", "width": -2.4436999999999998}, {"from": "LoRA", "to": "2. Business Stakeholders of an ML Project.md", "width": -2.4388}, {"from": "LoRA", "to": "GraphQL.md", "width": -2.4360999999999997}, {"from": "LoRA", "to": "3. Data Profiling.md", "width": -2.43}, {"from": "LoRA", "to": "VRAM vs. RAM.md", "width": -2.4161}, {"from": "LoRA", "to": "Step Back Prompting.md", "width": -2.4097}, {"from": "LoRA", "to": "5. Collecting Data.md", "width": -2.395}, {"from": "LoRA", "to": "3. Human level Performance (HLP).md", "width": -2.3763}, {"from": "LoRA", "to": "Horror Game - Multiple personality LLM Agents.md", "width": -2.3683}, {"from": "LoRA", "to": "Self-Instruct.md", "width": -2.3455}, {"from": "LoRA", "to": "Tree of Thoughts (ToT).md", "width": -2.3167}, {"from": "LoRA", "to": "Zero-Shot.md", "width": -2.3093}, {"from": "LoRA", "to": "LoftQ.md", "width": -2.3013}, {"from": "LoRA", "to": "AdaLoRA.md", "width": -2.3002000000000002}, {"from": "LoRA", "to": "LoKr.md", "width": -2.3002000000000002}, {"from": "LoRA", "to": "P-Tuning.md", "width": -2.3002000000000002}, {"from": "LoRA", "to": "LoHa.md", "width": -2.3002000000000002}, {"from": "LoRA", "to": "Electron JS.md", "width": -2.2641}, {"from": "LoRA", "to": "GraphRAG.md", "width": -2.2493}, {"from": "LoRA", "to": "Godot.md", "width": -2.1702999999999997}, {"from": "LoRA", "to": "31 - Deployment Options.md", "width": -1.7301}, {"from": "LoRA", "to": "0. ML Lifecycle Overview.md", "width": -1.4985}, {"from": "LoRA", "to": "6. Selecting and Training a Model.md", "width": -1.4795}, {"from": "LoRA", "to": "4. Error analysis and Performance Auditing.md", "width": -1.3437}, {"from": "LoRA", "to": "5. Labelling Data.md", "width": -1.3328}, {"from": "LoRA", "to": "TFLOP.md", "width": -1.1938}, {"from": "LoRA", "to": "Checkout GRAPHRag.md", "width": -1.1077000000000001}, {"from": "LoRA", "to": "Pearl.md", "width": -0.6349}, {"from": "LoRA", "to": "Parameter-Efficient Fine-Tuning (PEFT).md", "width": -0.4099}, {"from": "LoRA", "to": "QLoRA.md", "width": -0.3177}, {"from": "LoRA", "to": "LoRA.md", "width": -0.25470000000000004}, {"from": "LoRA", "to": "Quantization.md", "width": -0.18000000000000002}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

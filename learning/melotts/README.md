@@ -17,6 +17,7 @@ brew uninstall mecab
 pip install unidic-lite
 ARCHFLAGS='-arch arm64' pip install --compile --use-pep517 --no-cache-dir --force mecab-python3==1.0.5
 
+
 pip install -e .
 python -m unidic download
 

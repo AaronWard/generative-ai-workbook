@@ -22,7 +22,12 @@ $ ./main -m /Users/award40/Desktop/personal/github/generative-ai-workbook/learni
 
 ## Fix kHz issue: 
 
+> https://github.com/kkroening/ffmpeg-python/issues/174
+     
 ```bash
+brew install ffmpeg
+conda install -c conda-forge ffmpeg
+pip install ffmpeg-python
 ffmpeg -i /Users/award40/Desktop/personal/github/generative-ai-workbook/learning/whisper/figure.wav -ar 16000 -ac 1 -c:a pcm_s16le /Users/award40/Desktop/personal/github/generative-ai-workbook/learning/whisper/figure_fixed.wav
 ```
 

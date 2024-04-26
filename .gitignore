@@ -9,6 +9,9 @@ __pycache__/
 **/*.log
 */*.log
 
+**/*.wav
+*/*.wav
+
 # Use defined ignores
 **/OAI_CONFIG_LIST
 */OAI_CONFIG_LIST

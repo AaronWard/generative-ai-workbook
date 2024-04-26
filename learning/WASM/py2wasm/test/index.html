@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WASM Python App</title>
+    <script>
+        async function loadWASM() {
+            let wasmModule = await WebAssembly.instantiateStreaming(fetch('../_output/project.wasm'));
+            wasmModule.instance.exports.main();  // Assuming 'main' is an exported function in your WASM module
+        }
+    </script>
+</head>
+<body onload="loadWASM()">
+    <h1>Running Python as WASM</h1>
+</body>
+</html>

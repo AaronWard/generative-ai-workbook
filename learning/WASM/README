@@ -1,0 +1,31 @@
+
+
+
+- https://github.com/wasmerio/wasmer-python
+- https://github.com/bytecodealliance/wasmtime-py
+- https://github.com/wasm3/pywasm3
+- [Docs](https://pypi.org/project/py2wasm/#usage)
+- https://blog.cloudflare.com/python-workers
+
+
+```
+curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+<!-- sudo mv ./spin /usr/local/bin/spin -->
+./spin plugin install py2wasm
+./spin templates install --git https://github.com/fermyon/spin-python-sdk
+./spin new --accept-defaults http-py example
+```
+
+```
+conda deactivate
+python -m venv .venv
+source .venv/bin/activate
+pip install chainlit componentize-py spin-sdk
+
+pip install pydantic-core --platform macosx_10_12_x86_64.whl -t . --only-binary=:all:
+
+../spin build
+```
+https://pypi.org/project/pydantic-core/#files
+https://developer.fermyon.com/spin/v2/index
+https://developer.fermyon.com/spin/v2/python-components

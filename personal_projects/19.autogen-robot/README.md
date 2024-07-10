@@ -12,11 +12,6 @@ The intended goal is to control a robots motions using natural language.
 The robot has different sets of motions called Actions (located in `/action_files`).
 These can be used as function calls
 
-## Progress updates:
-
-[![Video Screenshot](url-of-the-screenshot)](https://twitter.com/TrainedOnTest/status/1731411008827064481?ref_src=twsrc%5Etfw)
-
-
 **Future modifications to include:**
 - Adding voice assisted interaction with the robot.
 - Autonomous decision making

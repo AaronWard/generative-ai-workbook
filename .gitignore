@@ -17,6 +17,11 @@ __pycache__/
 */OAI_CONFIG_LIST
 
 
+learning/WASM/spin
+learning/WASM/py2wasm/_output/example.wasm
+learning/whisper/test.wav
+
+
 **/wandb/
 */wandb/
 

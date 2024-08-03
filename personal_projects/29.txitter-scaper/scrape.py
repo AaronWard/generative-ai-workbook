@@ -7,12 +7,12 @@ from selenium.webdriver.common.by import By
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 
 # Connect to the database (or create it if it doesn't exist)
-conn = sqlite3.connect('tweets_2.db')
+conn = sqlite3.connect('tweets_4.db')
 cursor = conn.cursor()
 
 # Create the table (if it doesn't exist)
@@ -32,7 +32,7 @@ def user_details():
     return twitter_username, twitter_password
 
 def scrape_replies(tweet_url, twitter_username, twitter_password):
-    wait = WebDriverWait(driver, 20)  # Creates a maximum wait time of 20 seconds for each field
+    wait = WebDriverWait(driver, 30)  # Increased wait time to 30 seconds
 
     # Navigate to Twitter login page
     driver.get("https://twitter.com/login")
@@ -61,9 +61,7 @@ def scrape_replies(tweet_url, twitter_username, twitter_password):
     # Set to keep track of collected replies
     collected_replies = set()
 
-    # Scroll down and collect replies until there are no more new replies
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    while True:
+    def collect_replies():
         try:  # Waits for replies to load
             replies = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="tweet"]')))
         except TimeoutException:
@@ -86,11 +84,14 @@ def scrape_replies(tweet_url, twitter_username, twitter_password):
                 # Construct the reply URL
                 reply_url = f'https://twitter.com/{twitter_handle}/status/{reply_id}'
 
+                # Debug print to verify reply structure
+                print(f"Collected reply: handle={twitter_handle}, content={reply_text}, url={reply_url}")
+
             except NoSuchElementException:
                 continue
 
             # If the reply is not already collected, process it
-            reply_data = (twitter_handle, reply_text)
+            reply_data = (twitter_handle, reply_text, reply_url)
             if reply_data not in collected_replies:
                 print("Handle:", twitter_handle)
                 print("Content:", reply_text)
@@ -105,17 +106,41 @@ def scrape_replies(tweet_url, twitter_username, twitter_password):
 
                 new_replies = True
 
-        # Scroll down
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        return new_replies
 
-        # Wait for some time to allow replies to load
-        time.sleep(5)
+    # Scroll down and collect top-level replies
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        try:
+            new_replies = collect_replies()
 
-        # Calculate new scroll height and compare with last scroll height
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
+            # Scroll down
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+            # Wait for some time to allow replies to load
+            time.sleep(5)
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height and not new_replies:
+                break
+            last_height = new_height
+
+        except WebDriverException as e:
+            print(f"WebDriverException encountered: {e}")
             break
-        last_height = new_height
+
+    # Expand and collect nested replies
+    for reply in collected_replies.copy():
+        try:
+            driver.get(reply[2])  # Navigate to the reply URL
+
+            # Wait for nested replies to load
+            time.sleep(3)
+            collect_replies()
+        except WebDriverException as e:
+            print(f"WebDriverException encountered while navigating to reply URL: {e}")
+            continue
 
 username, password = user_details()
 
@@ -126,7 +151,7 @@ service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service)
 
 # URL of the tweet you want to scrape replies for
-tweet_url = ''
+tweet_url = ""
 
 # Call the function & if there is an error this ensures the database closes correctly
 try:

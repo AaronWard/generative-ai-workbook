@@ -14,6 +14,7 @@ __pycache__/
 
 # Use defined ignores
 learning/flux/flux/
+learning/flux/saved_flux_model/
 **/OAI_CONFIG_LIST
 */OAI_CONFIG_LIST
 

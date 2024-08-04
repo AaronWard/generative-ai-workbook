@@ -13,6 +13,7 @@ __pycache__/
 */*.wav
 
 # Use defined ignores
+learning/flux/flux/
 **/OAI_CONFIG_LIST
 */OAI_CONFIG_LIST
 

@@ -36,6 +36,21 @@ sudo swapon /var/vm/swapfile
 - Schnell: https://fal.ai/models/fal-ai/flux/schnell
 - `huggingface-cli`: https://huggingface.co/docs/huggingface_hub/guides/cli#huggingface-cli-login
 
+Github Issue:
+- https://github.com/black-forest-labs/flux/issues/19
+- https://github.com/black-forest-labs/flux/issues/30
+- https://github.com/bghira/SimpleTuner/blob/main/documentation/quickstart/FLUX.md
+
+Reddit:
+- https://www.reddit.com/r/StableDiffusion/comments/1eij95i/running_flux_on_an_apple_m1_using_comfyui/
+- https://www.reddit.com/r/open_flux/comments/1eikuz7/comment/lgbgfys/?share_id=kC9DEiQokXpdlMyFVEvYV&utm_content=2&utm_medium=android_app&utm_name=androidcss&utm_source=share&utm_term=1
+
+Youtube Videos:
+- https://www.youtube.com/watch?v=EvdgI_JLVcQ&t=2s
+
 Misc:
 - https://izard.livejournal.com/277230.html
-- https://www.reddit.com/r/open_flux/comments/1eikuz7/comment/lgbgfys/?share_id=kC9DEiQokXpdlMyFVEvYV&utm_content=2&utm_medium=android_app&utm_name=androidcss&utm_source=share&utm_term=1
+- https://towards-agi.medium.com/how-to-flux-schnell-locally-on-an-m3-max-macbook-pro-a7b16b6fcd1c
+- https://comfyanonymous.github.io/ComfyUI_examples/flux/
+- https://www.chaindesk.ai/tools/youtube-summarizer/flux-1-schnell-local-install-guide-comfy-ui-tXO6SJ-6Eb8#Workflow%20and%20Model%20Setup
+- https://anakin.ai/blog/flux-schnell-local/

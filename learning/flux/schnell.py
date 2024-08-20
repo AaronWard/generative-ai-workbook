@@ -44,6 +44,16 @@ print(f"Model path: {model_path}")
 
 # Step 2: Load and cache the model locally
 print("Loading model...")
+# pipe = FluxPipeline.from_pretrained(
+#     # "black-forest-labs/FLUX.1-schnell",
+#     "black-forest-labs/FLUX.1-dev",
+#     # cache_dir=model_path,
+#     # revision='refs/pr/1',
+#     # low_cpu_mem_usage=True,
+#     torch_dtype=torch.bfloat16,
+# ).to("mps")
+
+
 pipe = FluxPipeline.from_pretrained(
     # "black-forest-labs/FLUX.1-schnell",
     "black-forest-labs/FLUX.1-dev",
@@ -52,6 +62,9 @@ pipe = FluxPipeline.from_pretrained(
     # low_cpu_mem_usage=True,
     torch_dtype=torch.bfloat16,
 ).to("mps")
+pipe.vae.enable_tiling()
+pipe.vae.enable_slicing()
+# pipe.enable_sequential_cpu_offload() 
 
 # pipe = accelerator.prepare(pipe)
 
@@ -74,6 +87,7 @@ try:
         num_inference_steps=6,
         max_sequence_length=256,
     ).images[0]
+    print('Max mem allocated (GB) while denoising:', torch.cuda.max_memory_allocated() / (1024 ** 3))
 except Exception as e:
     print(f"An error occurred: {e}")
 finally:

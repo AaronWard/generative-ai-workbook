@@ -98,3 +98,17 @@ pip install -r requirements.txt
 
 python main.py --prompt "Realistic image" --steps 6 --seed 2024 --height 1024 --width 1024
 ```
+
+
+python main.py --prompt "Captured with a Canon EF 50mm f1.4 lens, A highly detailed, realistic Skyrim-inspired landscape depicting a cold, rugged tundra. The scene is set in the near-nighttime, under a dark sky filled with twinkling stars. Above, the sky is illuminated by striking pink Northern Lights that arc gracefully across the horizon, casting a subtle, ethereal glow on the landscape below. The terrain transitions from snow-covered highlands down to less snowy, rocky lower altitudes, where patches of frozen grass and hardy shrubs can be seen. Majestic, jagged mountains loom in the background, their peaks capped with snow and ice, towering over the tundra. The overall atmosphere is cold and serene, with the combination of the dark sky and the soft pink light from the auroras creating a mystical, almost otherworldly ambiance." --steps 6 --seed 2024 --height 1024 --width 1024
+
+
+----
+
+### Using the dev 
+
+
+```
+python main.py --prompt "" --steps 20 --seed 2 --height 1024 --width 1024 --model "black-forest-labs/FLUX.1-dev"
+```
+

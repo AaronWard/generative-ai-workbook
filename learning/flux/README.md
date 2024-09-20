@@ -112,3 +112,10 @@ python main.py --prompt "Captured with a Canon EF 50mm f1.4 lens, A highly detai
 python main.py --prompt "" --steps 20 --seed 2 --height 1024 --width 1024 --model "black-forest-labs/FLUX.1-dev"
 ```
 
+
+---
+
+### LoRAs
+
+Here is a site where you can download LoRAs for influencing the design of the image being produced: https://civitai.com/
+

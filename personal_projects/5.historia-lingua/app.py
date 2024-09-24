@@ -1,4 +1,4 @@
-"""
+.. """
 This is the main flask application for Historia Lingua. The script contains endpoints
 to handle the different kinds of requests that come from the dashboard.
 

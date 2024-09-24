@@ -1,3 +1,13 @@
+
+> This comes from the following video: https://www.youtube.com/watch?v=V_0dNE-H2gw&t=1s
+> TBH, i feel like there would be more time spent learning how the UI components work
+> than it would take just to implement it in code. It seems cool but it's more useful
+> for people with no software engineering experience.
+
+
+
+---
+
 # Self-hosted AI starter kit
 
 **Self-hosted AI Starter Kit** is an open, docker compose template that

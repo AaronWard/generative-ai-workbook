@@ -160,19 +160,20 @@ class YouTubeSearchApp:
         table.add_column("Rank", style="dim", width=6)
         table.add_column("Similarity", justify="right")
         table.add_column("Timestamp", justify="center")
-        table.add_column("Text", justify="left")
+        table.add_column("Text", justify="left", width=60)
         table.add_column("Link", justify="center")
 
         # Add each of the top 5 results to the table
         for rank, idx in enumerate(top_indices):
             timestamp = video_data["timestamps"][idx]
             text = video_data["texts"][idx]
+  
             similarity = similarities[idx]
             formatted_time = self.format_time(timestamp)
             youtube_link = f"https://www.youtube.com/watch?v={video_id}&t={int(timestamp)}"
             table.add_row(
                 f"{rank + 1}",
-                f"{similarity:.4f}",
+                f"{similarity:.3f}",
                 formatted_time,
                 text,
                 f"[link={youtube_link}]Click[/link]",

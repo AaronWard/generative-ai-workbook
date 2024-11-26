@@ -1,23 +1,27 @@
-ControlFlow is a Python framework designed for building agentic AI workflows. It allows developers to create workflows that delegate tasks to LLM (Large Language Model) agents, which are autonomous entities capable of making decisions and performing complex tasks. The framework emphasizes a task-centric approach, enabling the creation of discrete, observable tasks that can be assigned to specialized AI agents. These tasks can be combined into flows to orchestrate more complex behaviors.
+ControlFlow is a Python framework for building AI workflows. It lets you create tasks for AI agents to handle - these agents can make decisions and do complex work on their own. You can combine tasks into flows to do bigger things.
 
-### Key Features of ControlFlow:
+### What ControlFlow Can Do:
 
-- **Structured Results**: Tasks can return structured data types supported by Pydantic, not just text.
-- **Custom Tools**: Developers can provide any Python function as a tool for agents to use.
-- **Multi-agent Collaboration**: Multiple agents can be assigned to a task to enable collaboration.
-- **User Interaction**: Agents can interact with users, allowing for dynamic input and feedback.
-- **Flows**: Complex workflows can be created by running tasks with a shared context and message history.
+- **Structured Results**: Get back organized data (using Pydantic), not just text
+- **Custom Tools**: Use any Python function as a tool for agents
+- **Team Up Agents**: Have multiple agents work together on tasks
+- **Talk to Users**: Agents can ask for input and give feedback
+- **Flows**: Chain tasks together with shared info and history
 
-### Benefits of Using ControlFlow:
+### Why Use ControlFlow:
 
-- **Seamless Integration**: Easily integrate AI capabilities with existing Python codebases.
-- **Fine-grained Control**: Maintain oversight and control over AI workflows.
-- **Scalability**: Suitable for both simple scripts and complex applications.
-- **Transparency**: Provides insights into AI decision-making processes.
-- **Rapid Prototyping**: Facilitates quick experimentation with AI-powered features.
-- **Productivity**: Focus on application logic while ControlFlow manages AI orchestration.
+- **Easy to Add**: Drops right into Python code
+- **Stay in Control**: Keep tabs on what AI is doing
+- **Grows With You**: Works for small scripts or big apps
+- **See What's Up**: Watch how AI makes decisions
+- **Quick Testing**: Try out AI features fast
+- **Get More Done**: Focus on your code while ControlFlow handles the AI stuff
 
-For more detailed information, you can visit the [ControlFlow website](https://controlflow.ai/welcome).
+
+Links:
+- [ControlFlow website](https://controlflow.ai/welcome)
+- [Prefect Website](https://www.prefect.io/controlflow)
+- [Github](https://github.com/PrefectHQ/controlflow)
 
 ---
 

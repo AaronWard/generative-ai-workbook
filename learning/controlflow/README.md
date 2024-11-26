@@ -22,6 +22,7 @@ Links:
 - [ControlFlow website](https://controlflow.ai/welcome)
 - [Prefect Website](https://www.prefect.io/controlflow)
 - [Github](https://github.com/PrefectHQ/controlflow)
+- [Slack Channel](https://prefect.io/slack)
 
 ---
 

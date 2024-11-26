@@ -119,3 +119,20 @@ python main.py --prompt "" --steps 20 --seed 2 --height 1024 --width 1024 --mode
 
 Here is a site where you can download LoRAs for influencing the design of the image being produced: https://civitai.com/
 
+
+```
+mflux-generate \
+    --prompt "Your desired prompt describing the image and style" \
+    --init-image-path "/Users/.../pfp.jpg" \
+    --init-image-strength 0.5 \
+    --lora-paths "/Users/...." \
+    --lora-scales 1.0 \
+    --model dev \
+    --steps 20 \
+    --seed 42 \
+    --guidance 4.0 \
+    --quantize 8 \
+    --height 1024 \
+    --width 1024
+
+```

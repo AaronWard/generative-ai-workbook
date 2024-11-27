@@ -23,10 +23,6 @@ class CategorizationResult(BaseModel):
     categories: List[str]
 
 def load_topics(file_path='topics_updated.txt'):
-    # if os.path.exists(file_path):
-    #     with open(file_path, 'r') as f:
-    #         return [line.strip() for line in f if line.strip()]
-    # else:
     return [
         "In-context learning",
         "Multimodal models", 
@@ -173,7 +169,6 @@ def main():
         "https://www.youtube.com/@indydevdan/videos",
         "https://www.youtube.com/@AIJasonZ/videos",
     ]
-    all_results = []
 
     for channel_url in channel_urls:
         videos = fetch_videos_from_channel(channel_url, max_date)
@@ -184,7 +179,6 @@ def main():
         for video in videos:
             print(f"\n\nProcessing video: {video['title']}\n\n")
 
-            
             transcript = fetch_transcript(video['video_id'])
             description = video.get('description', '')
 
@@ -203,13 +197,12 @@ def main():
                 print(f"No transcript or description available for video ID: {video['video_id']}")
                 continue
 
-
             # Create a flow for processing each video
             @cf.flow(context_kwargs=["content", "TOPICS"])
             def process_video_flow(content, TOPICS):
                 # Task 1: Summarize Video Description
                 def summarize_video():
-                    summary_prompt = load_prompt('prompts/summarize2.txt', title=video['title'], description=video['description'], transcript=content)
+                    summary_prompt = load_prompt('prompts/summarize.txt', title=video['title'], description=video['description'], transcript=content)
                     summary_result = cf.run(
                         objective="Summarize the video transcript to capture main insights",
                         instructions=summary_prompt,
@@ -223,9 +216,9 @@ def main():
                 # Task 2: Categorize Video based on summary
                 def categorize_video():
                     categorize_prompt = load_prompt(
-                        'prompts/categorize2.txt',
-                        summary=summary_result,
-                        predefined_topics=TOPICS
+                        'prompts/categorize.txt',
+                        predefined_topics=TOPICS,
+                        summary=summary_result
                     )
                     categories_output = cf.run(
                         objective="Categorize the video summary into predefined topics",
@@ -238,11 +231,6 @@ def main():
                     return categories_result
 
                 categories_result = categorize_video()
-
-                # # Append any new topics to TOPICS
-                # for category in categories_result:
-                #     if category not in TOPICS:
-                #         TOPICS.append(category)
 
                 # Collect the results
                 video_result = {
@@ -258,11 +246,24 @@ def main():
 
             # Run the process_video_flow for the current video
             video_result = process_video_flow(content, TOPICS)
-            # all_results.append(vid eo_result)
-            
-            # Save results to a JSON file named after the channel
-            with open(f'./data/{channel_name}.json', 'w') as json_file:
-                json.dump(video_result, json_file, indent=4)
+
+            # Load existing data if the file exists
+            file_path = f'./data/{channel_name}.json'
+            if os.path.exists(file_path):
+                try:
+                    with open(file_path, 'r') as json_file:
+                        existing_data = json.load(json_file)
+                except json.JSONDecodeError:
+                    existing_data = []
+            else:
+                existing_data = []
+
+            # Append new result to existing data
+            existing_data.append(video_result)
+
+            # Save updated data back to the JSON file
+            with open(file_path, 'w') as json_file:
+                json.dump(existing_data, json_file, indent=4)
 
     print("Done!")
 

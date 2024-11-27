@@ -2,7 +2,26 @@
 
 ## AI Youtube Analysis
 
-The following is a showcase of ControlFlow in action. To do something interesting, I've built a tool that can analyse a youtube channel and give you a summary of the videos and the functionalities that are covered in each video
+The following is a showcase of ControlFlow in action. To do something interesting, I've built a tool that can analyse a youtube channel and give you a summary of the videos and the functionalities that are covered in each video. This data is stored in the /data folder in json format.
+```
+ {
+    'channel': "",
+    'title': "",
+    'description': "",
+    'summary': ""
+    'categories': []
+    'url': ""
+    'published_at': ""
+}
+```
+
+
+- Get an API key for youtube: https://console.cloud.google.com/apis/credentials
+- Add the API key to the .env file
+```
+YOUTUBE_API_KEY=****
+```
+
 
 ###  Here are some of the Channels:
 - https://www.youtube.com/@vrsen/videos

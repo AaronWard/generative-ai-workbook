@@ -20,10 +20,10 @@ This is a central location for all generative AI related work from courses, pers
 
 ---
 
-### Usecases of LLMs
-
+### Functionalities of LLMs:
 - Search
-- Classification
+- Classification 
+- Topic Modelling
 - Clustering
 - Data, Text and Code generation
 - Summarization
@@ -31,3 +31,7 @@ This is a central location for all generative AI related work from courses, pers
 - Extractions
 - Proof reading
 - Querying Data
+- Executing code
+- Sentiment Analysis
+- Planning and Complex Reasoning
+- Image classification and generation (If multimodal)

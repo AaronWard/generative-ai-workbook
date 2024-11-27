@@ -1,0 +1,29 @@
+<prompt>
+  <purpose>
+    Categorize a YouTube video summary into relevant AI and LLM topics based on a predefined list, adding new topics if necessary.
+  </purpose>
+
+  <instructions>
+    <instruction>Read the provided summary of a YouTube video.</instruction>
+    <instruction>Identify all relevant topics discussed in the summary using the predefined list below.</instruction>
+    <instruction>If a relevant topic is not in the predefined list, add it to the list and include it in your response.</instruction>
+    <instruction>Return a list of topics that accurately reflect the content of the summary.</instruction>
+    <instruction>Ensure the topics are specific and align with the subjects covered in the video.</instruction>
+  </instructions>
+
+  <predefined-topics>
+    {predefined_topics}
+  </predefined-topics>
+
+  <example-output>
+    <identified-topics>
+      <topic>Multimodal models</topic>
+      <topic>Image classification and generation</topic>
+      <topic>Ethical considerations</topic> <!-- New topic added -->
+    </identified-topics>
+  </example-output>
+
+  <summary>
+    {summary}
+  </summary>
+</prompt>

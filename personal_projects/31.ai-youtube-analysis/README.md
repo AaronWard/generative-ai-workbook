@@ -22,6 +22,9 @@ The following is a showcase of ControlFlow in action. To do something interestin
 - https://www.youtube.com/@ShawhinTalebi/videos
 - https://www.youtube.com/@YannicKilcher/videos
 - https://www.youtube.com/@1littlecoder/videos
+- https://www.youtube.com/@jamesbriggs/videos
+- https://www.youtube.com/@YaronBeen/videos
+
 
 ### The logic is as follows:
 

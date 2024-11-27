@@ -22,42 +22,42 @@ from utils.transcript_utils import fetch_transcript
 class CategorizationResult(BaseModel):
     categories: List[str]
 
-
 def load_topics(file_path='topics_updated.txt'):
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as f:
-            return [line.strip() for line in f if line.strip()]
-    else:
-        return [
-            "In context learning",
-            "Multimodal models", 
-            "Agents",
-            "Vector Databases",
-            "Prompting",
-            "Chain of thought reasoning",
-            "Image",
-            "Search", 
-            "Classification",
-            "Topic Modelling",
-            "Clustering",
-            "Data, Text and Code generation",
-            "Summarization",
-            "Rewriting",
-            "Extractions", 
-            "Proof reading",
-            "Swarms",
-            "Querying Data",
-            "Fine tuning",
-            "Executing code",
-            "Sentiment Analysis",
-            "Planning and Complex Reasoning",
-            "Image classification and generation (If multi-modal)",
-            "Philosophical reasoning and ethics",
-            "Reinforcement learning",
-            "Model security and privacy",
-            "APIs",
-            "Infrastructure"
-        ]
+    # if os.path.exists(file_path):
+    #     with open(file_path, 'r') as f:
+    #         return [line.strip() for line in f if line.strip()]
+    # else:
+    return [
+        "In-context learning",
+        "Multimodal models", 
+        "Agents",
+        "Vector Databases",
+        "Prompting",
+        "Chain of thought reasoning",
+        "Image",
+        "Search", 
+        "Classification",
+        "Topic Modelling",
+        "Clustering",
+        "Data, Text and Code generation",
+        "Summarization",
+        "Rewriting",
+        "Extractions", 
+        "Proof reading",
+        "Swarms",
+        "Querying Data",
+        "Framework or Library",
+        "Fine tuning",
+        "Executing code",
+        "Sentiment Analysis",
+        "Planning and Complex Reasoning",
+        "Image classification and generation (If multi-modal)",
+        "Philosophical reasoning and ethics",
+        "Reinforcement learning",
+        "Model security and privacy",
+        "APIs",
+        "Infrastructure"
+    ]
 
 def resolve_channel_id_from_handle(youtube, handle):
     response = youtube.search().list(
@@ -150,30 +150,48 @@ def load_prompt(file_path, **kwargs):
 @cf.flow
 def main():
     TOPICS = load_topics()
+    n_days = 365
+    
+    # Ensure the data directory exists
+    os.makedirs('./data', exist_ok=True)
     
     summary_agent = cf.Agent(
         name="Video Transcript Summarization Agent",
         description="Expert in summarizing youtube video transcripts to capture the main nuggets of information.",
+        model="openai/gpt-4o",
     )
 
     categorize_agent = cf.Agent(
         name="Topic Categorization Agent",
         description="Expert in quickly categorizing topics from a description of a video",
+        model="openai/gpt-4o",
     )
 
-    max_date = datetime.now() - timedelta(days=365)
+    max_date = datetime.now() - timedelta(days=n_days)
     channel_urls = [
-        "https://www.youtube.com/@vrsen/videos",
-        # ... (other channels)
+        # "https://www.youtube.com/@vrsen/videos",
+        "https://www.youtube.com/@indydevdan/videos",
+        "https://www.youtube.com/@AIJasonZ/videos",
     ]
     all_results = []
 
     for channel_url in channel_urls:
         videos = fetch_videos_from_channel(channel_url, max_date)
+        # Extract channel name from URL
+        channel_name = channel_url.split('@')[1].split('/')[0]
+        print(f"\n\nProcessing channel: {channel_name} with a total of {len(videos)} videos in the past {n_days} days\n\n")
+        
         for video in videos:
-            print(video)
+            print(f"\n\nProcessing video: {video['title']}\n\n")
+
+            
             transcript = fetch_transcript(video['video_id'])
             description = video.get('description', '')
+
+            # Fallback logic
+            if not transcript and not description:
+                print(f"No transcript or description available for video ID: {video['video_id']}")
+                continue  # Skip to the next video
 
             if transcript and description:
                 content = f"{transcript}\n\nVideo Description:\n{description}"
@@ -191,7 +209,7 @@ def main():
             def process_video_flow(content, TOPICS):
                 # Task 1: Summarize Video Description
                 def summarize_video():
-                    summary_prompt = load_prompt('prompts/summarize2.txt', transcript=content)
+                    summary_prompt = load_prompt('prompts/summarize2.txt', title=video['title'], description=video['description'], transcript=content)
                     summary_result = cf.run(
                         objective="Summarize the video transcript to capture main insights",
                         instructions=summary_prompt,
@@ -221,14 +239,16 @@ def main():
 
                 categories_result = categorize_video()
 
-                # Append any new topics to TOPICS
-                for category in categories_result:
-                    if category not in TOPICS:
-                        TOPICS.append(category)
+                # # Append any new topics to TOPICS
+                # for category in categories_result:
+                #     if category not in TOPICS:
+                #         TOPICS.append(category)
 
                 # Collect the results
                 video_result = {
+                    'channel': channel_name,
                     'title': video['title'],
+                    'description': video['description'],
                     'summary': summary_result,
                     'categories': categories_result,
                     'url': f"https://www.youtube.com/watch?v={video['video_id']}",
@@ -238,30 +258,13 @@ def main():
 
             # Run the process_video_flow for the current video
             video_result = process_video_flow(content, TOPICS)
-            all_results.append(video_result)
+            # all_results.append(vid eo_result)
+            
+            # Save results to a JSON file named after the channel
+            with open(f'./data/{channel_name}.json', 'w') as json_file:
+                json.dump(video_result, json_file, indent=4)
 
-        # Extract channel name from URL
-        channel_name = channel_url.split('@')[1].split('/')[0]
-
-        # Ensure the data directory exists
-        os.makedirs('./data', exist_ok=True)
-
-        # Save results to a JSON file named after the channel
-        with open(f'./data/{channel_name}.json', 'w') as json_file:
-            json.dump(all_results, json_file, indent=4)
-
-    # Output results
-    for result in all_results:
-        print(f"Title: {result['title']}")
-        print(f"Summary: {result['summary']}")
-        print(f"Categories: {result['categories']}")
-        print(f"URL: {result['url']}")
-        print(f"Published at: {result['published_at']}\n")
-
-    # Optionally, save the updated TOPICS list
-    with open('topics_updated.txt', 'w') as f:
-        for topic in TOPICS:
-            f.write(f"{topic}\n")
+    print("Done!")
 
 if __name__ == "__main__":
     main()

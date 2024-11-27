@@ -1,29 +1,24 @@
-<prompt>
-  <purpose>
-    Categorize a YouTube video summary into relevant AI and LLM topics based on a predefined list, adding new topics if necessary.
-  </purpose>
+### Purpose
+Categorize a YouTube video summary into relevant AI and LLM topics based on a predefined list, adding new topics if necessary.
 
-  <instructions>
-    <instruction>Read the provided summary of a YouTube video.</instruction>
-    <instruction>Identify all relevant topics discussed in the summary using the predefined list below.</instruction>
-    <instruction>If a relevant topic is not in the predefined list, add it to the list and include it in your response.</instruction>
-    <instruction>Return a list of topics that accurately reflect the content of the summary.</instruction>
-    <instruction>Ensure the topics are specific and align with the subjects covered in the video.</instruction>
-  </instructions>
+### Instructions
+1. Read the provided summary of a YouTube video.
+2. Identify all relevant topics discussed in the summary using the predefined list below.
+3. Ensure the topics are specific and align with the subjects covered in the video.
+5. Try your hardest to stay within the predefined topics list. Don't add additional topics that aren't already listed below unless you really need to.
+6. Return a list of topics that accurately reflect the content of the summary.
 
-  <predefined-topics>
-    {predefined_topics}
-  </predefined-topics>
+### Predefined Topics
+- `{{predefined_topics}}`
 
-  <example-output>
-    <identified-topics>
-      <topic>Multimodal models</topic>
-      <topic>Image classification and generation</topic>
-      <topic>Ethical considerations</topic> <!-- New topic added -->
-    </identified-topics>
-  </example-output>
+### Example Output
+  - Multimodal models
+  - Image classification and generation
+  - AI Ethics 
 
-  <summary>
-    {summary}
-  </summary>
-</prompt>
+note: `AI Ethics` is a new topic added.
+
+---
+
+### Summary:
+- `{{summary}}`

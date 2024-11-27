@@ -1,28 +1,23 @@
-<prompt>
-  <purpose>
-    Summarize a YouTube video transcript to capture the main topics and themes, especially related to AI and LLMs.
-    The purpose of this summary is to allow for topic categorization based on a predefined list of topics, so make sure you include all relevant relevant
-    information around any frameworks, tools, or technologies discussed. 
-  </purpose>
+### Purpose
+Summarize a YouTube video transcript to capture the main topics and themes, especially related to AI and LLMs. The purpose of this summary is to allow for topic categorization based on a predefined list of topics, so make sure you include all relevant information around any frameworks, tools, or technologies discussed.
 
-  <instructions>
-    <instruction>Read the provided transcript of a YouTube video.</instruction>
-    <instruction>Determine if the video is about AI or Large Language Models (LLMs).</instruction>
-    <instruction>If the video is relevant, generate a concise summary focusing on key points and topics discussed.</instruction>
-    <instruction>The summary should be detailed enough to allow for topic categorization based on a predefined list of topics.</instruction>
-    <instruction>Make note if the person is sharing AI news, demonstrating a tool or technology, providing advice, discussing a framework, or discussing a company.</instruction>
-    <instruction>Write the comprehensive summary in clear, professional language.</instruction>
-    <instruction>Write it in 800 words or less.</instruction>
-  </instructions>
+### Instructions
+1. Read the provided transcript of a YouTube video.
+2. Determine if the video is about AI or Large Language Models (LLMs).
+3. If the video is relevant, generate a concise summary focusing on key points and topics discussed.
+4. The summary should be detailed enough to allow for topic categorization based on a predefined list of topics.
+5. Make note if the person is sharing AI news, demonstrating a tool or technology, providing advice, discussing a framework, or discussing a company.
+6. Write the comprehensive summary in clear, professional language.
+7. Write it in 400 words or less.
 
-  <example-output>
-    <summary>
-In this video, the presenter delves into the advancements of multimodal models in AI, highlighting how combining text and images can enhance machine understanding. They discuss the implications of these models on image classification and generation, and provide examples of practical applications. The video also touches on ethical considerations and the future potential of multimodal AI systems.
-....
-    </summary>
-  </example-output>
+Example Output:
+- Summary: In this video, the presenter delves into the advancements of multimodal models in AI, highlighting how combining text and images can enhance machine understanding. They discuss the implications of these models on image classification and generation, and provide examples of practical applications. The video also touches on ethical considerations and the future potential of multimodal AI systems. ...
 
-  <transcript>
-    {{transcript}} 
-  </transcript>
-</prompt>
+## Video Title
+- `{{title}}`
+
+## Video Description
+- `{{description}}`
+
+### Transcript
+- `{{transcript}}`

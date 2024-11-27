@@ -1,45 +1,63 @@
-from dotenv import load_dotenv
-load_dotenv()
+"""
+# main.py
 
+The following script will analyze a list of youtube channels
+The video transcript is summarized and then categorized into 
+topics using ControlFlow agents. 
+"""
 import os
 import re
-
-import controlflow as cf
-from googleapiclient.discovery import build
+import json
+from typing import List
 from datetime import datetime, timedelta
 
-from utils.transcript_utils import fetch_transcript
+from dotenv import load_dotenv
+import controlflow as cf
+from pydantic import BaseModel
+from googleapiclient.discovery import build
 
-TOPICS = [
-    "In context learning",
-    "Multimodal models", 
-    "Agents",
-    "Vector Databases",
-    "Prompting",
-    "Chain of thought reasoning",
-    "Image",
-    "Search", 
-    "Classification",
-    "Topic Modelling",
-    "Clustering",
-    "Data, Text and Code generation",
-    "Summarization",
-    "Rewriting",
-    "Extractions", 
-    "Proof reading",
-    "Swarms",
-    "Querying Data",
-    "Fine tuning",
-    "Executing code",
-    "Sentiment Analysis",
-    "Planning and Complex Reasoning",
-    "Image classification and generation (If multi-modal)",
-    "Philosophical reasoning and ethics",
-    "Reinforcement learning",
-    "Model security and privacy",
-    "APIs",
-    "Infrastructure"
-]
+load_dotenv()
+
+from utils.transcript_utils import fetch_transcript
+class CategorizationResult(BaseModel):
+    categories: List[str]
+
+
+def load_topics(file_path='topics_updated.txt'):
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            return [line.strip() for line in f if line.strip()]
+    else:
+        return [
+            "In context learning",
+            "Multimodal models", 
+            "Agents",
+            "Vector Databases",
+            "Prompting",
+            "Chain of thought reasoning",
+            "Image",
+            "Search", 
+            "Classification",
+            "Topic Modelling",
+            "Clustering",
+            "Data, Text and Code generation",
+            "Summarization",
+            "Rewriting",
+            "Extractions", 
+            "Proof reading",
+            "Swarms",
+            "Querying Data",
+            "Fine tuning",
+            "Executing code",
+            "Sentiment Analysis",
+            "Planning and Complex Reasoning",
+            "Image classification and generation (If multi-modal)",
+            "Philosophical reasoning and ethics",
+            "Reinforcement learning",
+            "Model security and privacy",
+            "APIs",
+            "Infrastructure"
+        ]
 
 def resolve_channel_id_from_handle(youtube, handle):
     response = youtube.search().list(
@@ -123,31 +141,27 @@ def fetch_videos_from_channel(channel_url, max_date):
 def load_prompt(file_path, **kwargs):
     with open(file_path, 'r') as file:
         prompt_template = file.read()
-    # If there are lists in kwargs, format them appropriately
     for key, value in kwargs.items():
         if isinstance(value, list):
-            # Convert list to XML-like string
-            formatted_list = '\n    '.join([f'<topic>{topic}</topic>' for topic in value])
+            formatted_list = '\n'.join(value)
             kwargs[key] = formatted_list
     return prompt_template.format(**kwargs)
 
-@cf.flow(context_kwargs=["TOPICS"])
+@cf.flow
 def main():
+    TOPICS = load_topics()
     
-    
-    # Step 1: Summarize Video Description
     summary_agent = cf.Agent(
         name="Video Transcript Summarization Agent",
         description="Expert in summarizing youtube video transcripts to capture the main nuggets of information.",
     )
 
-    # Step 2: Categorize Video based on summary
     categorize_agent = cf.Agent(
         name="Topic Categorization Agent",
         description="Expert in quickly categorizing topics from a description of a video",
     )
 
-    max_date = datetime.now() - timedelta(days=10)
+    max_date = datetime.now() - timedelta(days=365)
     channel_urls = [
         "https://www.youtube.com/@vrsen/videos",
         # ... (other channels)
@@ -178,9 +192,10 @@ def main():
                 # Task 1: Summarize Video Description
                 def summarize_video():
                     summary_prompt = load_prompt('prompts/summarize2.txt', transcript=content)
-                    summary_result = summary_agent.run(
+                    summary_result = cf.run(
                         objective="Summarize the video transcript to capture main insights",
-                        instructions=summary_prompt
+                        instructions=summary_prompt,
+                        agents=[summary_agent]
                     )
 
                     return summary_result
@@ -194,17 +209,14 @@ def main():
                         summary=summary_result,
                         predefined_topics=TOPICS
                     )
-                    categories_output = categorize_agent.run(
+                    categories_output = cf.run(
                         objective="Categorize the video summary into predefined topics",
-                        instructions=categorize_prompt
+                        instructions=categorize_prompt,
+                        result_type=CategorizationResult,
+                        agents=[categorize_agent]
                     )                    
-                    # Parse the agent's output into a list
-                    def parse_categories_output(output):
-                        topics = re.split(r',|\n', output)
-                        topics = [topic.strip().title() for topic in topics if topic.strip()]
-                        return topics
 
-                    categories_result = parse_categories_output(categories_output)
+                    categories_result = categories_output.categories
                     return categories_result
 
                 categories_result = categorize_video()
@@ -228,11 +240,21 @@ def main():
             video_result = process_video_flow(content, TOPICS)
             all_results.append(video_result)
 
+        # Extract channel name from URL
+        channel_name = channel_url.split('@')[1].split('/')[0]
+
+        # Ensure the data directory exists
+        os.makedirs('./data', exist_ok=True)
+
+        # Save results to a JSON file named after the channel
+        with open(f'./data/{channel_name}.json', 'w') as json_file:
+            json.dump(all_results, json_file, indent=4)
+
     # Output results
     for result in all_results:
         print(f"Title: {result['title']}")
         print(f"Summary: {result['summary']}")
-        print(f"Categories: {', '.join(result['categories'])}")
+        print(f"Categories: {result['categories']}")
         print(f"URL: {result['url']}")
         print(f"Published at: {result['published_at']}\n")
 
@@ -240,104 +262,6 @@ def main():
     with open('topics_updated.txt', 'w') as f:
         for topic in TOPICS:
             f.write(f"{topic}\n")
-
-# @cf.flow
-# def main():
-#     max_date = datetime.now() - timedelta(days=10)
-#     channel_urls = [
-#         "https://www.youtube.com/@vrsen/videos",
-#         # ... (other channels)
-#     ]
-    
-#     all_results = []
-#     for channel_url in channel_urls:
-#         videos = fetch_videos_from_channel(channel_url, max_date)
-#         for video in videos:
-#             print(video)
-#             # Create a parent task to represent the entire analysis
-#             with cf.Task(
-#                 objective="Analyze YouTube Video",
-#                 instructions="Include each subtask result in your result",
-#                 result_type=dict, 
-#                 context={'video': video}  # Pass video info to the context
-#             ) as parent_task:
-
-#                 transcript = fetch_transcript(video['video_id'])
-#                 description = video.get('description', '')
-
-#                 if transcript and description:
-#                     content = f"{transcript}\n\nVideo Description:\n{description}"
-#                 elif transcript:
-#                     content = transcript
-#                 elif description:
-#                     content = description
-#                 else:
-#                     print(f"No transcript or description available for video ID: {video['video_id']}")
-#                     continue
-
-#                 # Load and format the summarization prompt
-#                 summary_prompt = load_prompt('prompts/summarize.txt', transcript=content)
-        
-#                 # Child task 1: Summarize Video Description
-#                 summary_task = cf.Task(
-#                     objective="Summarize the video description",
-#                     instructions=summary_prompt,
-#                     result_type=str,
-#                 )
-
-#                 # Run the summary task
-#                 summary_result = summary_task.run()
-
-#                 # Load and format the categorization prompt, injecting the current TOPICS
-#                 categorize_prompt = load_prompt(
-#                     'prompts/categorize.txt',
-#                     summary=summary_result,
-#                     predefined_topics=TOPICS
-#                 )
-
-#                 # Child task 2: Categorize Video based on summary
-#                 categorize_task = cf.Task(
-#                     objective="Categorize the video based on its summary",
-#                     instructions=categorize_prompt,
-#                     result_type=list,
-#                 )
-
-#                 # Run the categorization task
-#                 categories_result = categorize_task.run()
-
-#                 # Append any new topics to TOPICS
-#                 for category in categories_result:
-#                     if category not in TOPICS:
-#                         TOPICS.append(category)
-
-#                 # Collect the results
-#                 video_result = {
-#                     'title': video['title'],
-#                     'summary': summary_result,
-#                     'categories': categories_result,
-#                     'url': f"https://www.youtube.com/watch?v={video['video_id']}",
-#                     'published_at': video['published_at']
-#                 }
-#                 all_results.append(video_result)
-#             result = parent_task.run()
-            
-#     # Output results, e.g., save to a file or print
-#     for result in all_results:
-#         print(f"Title: {result['title']}")
-#         print(f"Summary: {result['summary']}")
-#         print(f"Categories: {', '.join(result['categories'])}")
-#         print(f"URL: {result['url']}")
-#         print(f"Published at: {result['published_at']}\n")
-    
-#     # Optionally, save the updated TOPICS list
-#     with open('topics_updated.txt', 'w') as f:
-#         for topic in TOPICS:
-#             f.write(f"{topic}\n")
-
-# if __name__ == "__main__":
-#     main()
-
-
 
 if __name__ == "__main__":
     main()

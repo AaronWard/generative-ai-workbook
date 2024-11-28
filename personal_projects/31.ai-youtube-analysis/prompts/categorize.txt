@@ -21,4 +21,4 @@ note: `AI Ethics` is a new topic added.
 ---
 
 ### Summary:
-- `{{summary}}`
+`{{summary}}`

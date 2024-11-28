@@ -1,5 +1,6 @@
 import os
 import re
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -49,6 +50,37 @@ def extract_channel_id(channel_url):
     else:
         raise ValueError("Invalid channel URL format")
     
+
+def download_channel_icon(channel_name, channel_icon_url):
+    # Ensure the icons directory exists
+    icons_dir = './ui/public/assets/icons'
+    os.makedirs(icons_dir, exist_ok=True)
+
+    # Define the path where the icon will be saved
+    # Use channel_name in the filename to ensure uniqueness
+    sanitized_channel_name = re.sub(r'\W+', '', channel_name)  # Remove non-alphanumeric characters
+    icon_filename = f"{sanitized_channel_name}.jpg"
+    icon_path = os.path.join(icons_dir, icon_filename)
+
+    # Download the image only if it doesn't already exist
+    if not os.path.exists(icon_path):
+        try:
+            response = requests.get(channel_icon_url, stream=True)
+            if response.status_code == 200:
+                with open(icon_path, 'wb') as out_file:
+                    for chunk in response.iter_content(1024):
+                        out_file.write(chunk)
+                print(f"Downloaded icon for channel {channel_name}")
+            else:
+                print(f"Failed to download icon for channel {channel_name}: HTTP {response.status_code}")
+        except Exception as e:
+            print(f"Error downloading icon for channel {channel_name}: {e}")
+    else:
+        print(f"Icon for channel {channel_name} already exists. Skipping download.")
+
+    # Return the relative path to the icon for use in JSON data
+    return f"/assets/icons/{icon_filename}"
+
     
 
 def fetch_videos_from_channel(channel_url, max_date):
@@ -61,13 +93,26 @@ def fetch_videos_from_channel(channel_url, max_date):
     else:
         channel_id = extract_channel_id(channel_url)
 
-    # Fetch uploads playlist ID
-    response = youtube.channels().list(
-        part='contentDetails',
+    # Fetch channel details including snippet to get thumbnails
+    channel_response = youtube.channels().list(
+        part='snippet,contentDetails',
         id=channel_id
     ).execute()
-    
-    uploads_playlist_id = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+
+    channel_snippet = channel_response['items'][0]['snippet']
+    channel_title = channel_snippet['title']
+    channel_thumbnails = channel_snippet.get('thumbnails', {})
+
+    # Extract the highest resolution thumbnail available
+    if 'maxres' in channel_thumbnails:
+        channel_icon_url = channel_thumbnails['maxres']['url']
+    elif 'high' in channel_thumbnails:
+        channel_icon_url = channel_thumbnails['high']['url']
+    else:
+        channel_icon_url = channel_thumbnails.get('default', {}).get('url', '')
+
+    # Fetch uploads playlist ID
+    uploads_playlist_id = channel_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
     # Fetch videos from the uploads playlist
     videos = []
@@ -90,7 +135,9 @@ def fetch_videos_from_channel(channel_url, max_date):
                 'title': item['snippet']['title'],
                 'description': item['snippet']['description'],
                 'video_id': item['snippet']['resourceId']['videoId'],
-                'published_at': video_published_at
+                'published_at': video_published_at,
+                'channel_title': channel_title,
+                'channel_icon_url': channel_icon_url  # Add channel icon URL here
             })
         
         next_page_token = playlist_response.get('nextPageToken')

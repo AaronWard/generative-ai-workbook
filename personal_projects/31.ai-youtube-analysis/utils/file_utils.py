@@ -8,4 +8,8 @@ def load_prompt(file_path, **kwargs):
         if isinstance(value, list):
             formatted_list = '\n'.join(value)
             kwargs[key] = formatted_list
-    return prompt_template.format(**kwargs)
+    prompt = prompt_template.format(**kwargs)
+
+    # print("\nGenerated Prompt:\n")
+    # print(prompt)
+    return prompt

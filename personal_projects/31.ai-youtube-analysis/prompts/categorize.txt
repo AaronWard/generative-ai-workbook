@@ -9,7 +9,7 @@ Categorize a YouTube video summary into relevant AI and LLM topics based on a pr
 6. Return a list of topics that accurately reflect the content of the summary.
 
 ### Predefined Topics
-- `{{predefined_topics}}`
+- `{predefined_topics}`
 
 ### Example Output
   - Multimodal models
@@ -21,4 +21,4 @@ note: `AI Ethics` is a new topic added.
 ---
 
 ### Summary:
-`{{summary}}`
+`{summary}`

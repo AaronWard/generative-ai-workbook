@@ -68,19 +68,19 @@ def main():
     summary_agent = cf.Agent(
         name="Video Transcript Summarization Agent",
         description="Expert in summarizing YouTube video transcripts to capture the main nuggets of information.",
-        model="openai/gpt-4o",
+        model="openai/gpt-4o-mini",
     )
 
     categorize_agent = cf.Agent(
         name="Topic Categorization Agent",
         description="Expert in quickly categorizing topics from a description of a video",
-        model="openai/gpt-4o",
+        model="openai/gpt-4o-mini",
     )
 
     max_date = datetime.now() - timedelta(days=n_days)
     channel_urls = [
-        "https://www.youtube.com/@WesRoth/videos",
         "https://www.youtube.com/@matthew_berman/videos",
+        "https://www.youtube.com/@WesRoth/videos",
     ]
 
 

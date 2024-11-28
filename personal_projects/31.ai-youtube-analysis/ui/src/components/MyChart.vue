@@ -1,9 +1,7 @@
 <template>
     <div class="main-container">
-        <!-- Left Side: Filters and Chart -->
-        <div class="left-side">
-
-            <!-- YouTuber Filter Section -->
+        <!-- Left Side: YouTuber Filter Panel -->
+        <div class="youtuber-panel">
             <div class="filter-section">
                 <label class="filter-header">
                     <input type="checkbox" :checked="allYoutubersSelected" @change="toggleAllYoutubers" />
@@ -11,62 +9,67 @@
                 </label>
                 <label v-for="youtuber in youtubers" :key="youtuber.name" class="youtuber-filter">
                     <input type="checkbox" :value="youtuber.name" v-model="selectedYoutubers" />
-                    <!-- Display YouTuber icon as a circular image -->
                     <img v-if="youtuber.icon" :src="youtuber.icon" :alt="youtuber.name" class="youtuber-icon" />
                     <span class="youtuber-name">{{ youtuber.name }}</span>
                 </label>
             </div>
-
-            <div class="filter-section-divider"></div>
-
-            <!-- Category Filter Section -->
-            <div class="filter-section">
-                <label class="filter-header">
-                    <input type="checkbox" :checked="allCategoriesSelected" @change="toggleAllCategories" />
-                    <span class="filter-title">All Categories</span>
-                </label>
-                <label v-for="category in specifiedCategories" :key="category" class="category-filter">
-                    <input type="checkbox" :value="category" v-model="selectedCategories" />
-                    <span class="category-name">{{ category }}</span>
-                </label>
-            </div>
-
-            <!-- Chart -->
-            <div ref="chartRef" style="width: 100%; height: 600px;"></div>
         </div>
 
-        <!-- Right Side: Video Panel -->
-        <div class="right-side">
-            <div v-if="selectedVideo">
-                <!-- Video iframe -->
-                <h2 class="video-title">{{ selectedVideo.title }}</h2>
-                <iframe :src="videoIframeSrc" frameborder="0" allowfullscreen class="video-iframe"></iframe>
-
-                <!-- Tabs for Summary and Description -->
-                <div class="tabs">
-                    <button :class="{ active: activeTab === 'summary' }" @click="activeTab = 'summary'">
-                        Summary
-                    </button>
-                    <button :class="{ active: activeTab === 'description' }" @click="activeTab = 'description'">
-                        Description
-                    </button>
+        <!-- Main Content: Filters and Chart -->
+        <div class="main-content">
+            <div class="left-side">
+                <!-- Category Filter Section -->
+                <div class="filter-section">
+                    <label class="filter-header">
+                        <input type="checkbox" :checked="allCategoriesSelected" @change="toggleAllCategories" />
+                        <span class="filter-title">All Categories</span>
+                    </label>
+                    <label v-for="category in specifiedCategories" :key="category" class="category-filter">
+                        <input type="checkbox" :value="category" v-model="selectedCategories" />
+                        <span class="category-name">{{ category }}</span>
+                    </label>
                 </div>
 
-                <!-- Tab Content -->
-                <div class="tab-content">
-                    <div v-if="activeTab === 'summary'">
-                        <h3>Summary</h3>
-                        <p>{{ selectedVideo.summary }}</p>
-                    </div>
-                    <div v-if="activeTab === 'description'">
-                        <h3>Description</h3>
-                        <p>{{ selectedVideo.description }}</p>
-                    </div>
-                </div>
+                <!-- Chart -->
+                <div ref="chartRef" style="width: 100%; height:800px;"></div>
             </div>
-            <div v-else>
-                <!-- Placeholder when no video is selected -->
-                <p>Select a video to view details</p>
+
+            <!-- Right Side: Video Panel -->
+            <div class="right-side">
+                <div v-if="selectedVideo">
+                    <!-- Video iframe -->
+                    <h2 class="video-title" v-html="renderMarkdown(selectedVideo.title)"></h2>
+                    <iframe :src="videoIframeSrc" frameborder="0" allowfullscreen class="video-iframe"></iframe>
+
+                    <!-- Tabs for Summary and Description -->
+                    <div class="tabs">
+                        <button :class="{ active: activeTab === 'summary' }" @click="activeTab = 'summary'">
+                            Summary
+                        </button>
+                        <button :class="{ active: activeTab === 'description' }" @click="activeTab = 'description'">
+                            Description
+                        </button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <div v-if="activeTab === 'summary'">
+                            <h3>Summary</h3>
+                            <!-- Render Markdown for summary -->
+                            <div v-html="renderMarkdown(selectedVideo.summary)"></div>
+                        </div>
+                        <div v-if="activeTab === 'description'">
+                            <h3>Description</h3>
+                            <!-- Render Markdown for description -->
+                            <div v-html="renderMarkdown(selectedVideo.description)"></div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div v-else>
+                    <!-- Placeholder when no video is selected -->
+                    <p>Select a video to view details</p>
+                </div>
             </div>
         </div>
     </div>
@@ -76,6 +79,8 @@
 import { defineComponent, onMounted, ref, watch, computed } from 'vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
+import { marked } from 'marked' // Import the Markdown parser
+
 
 export default defineComponent({
     setup() {
@@ -102,6 +107,10 @@ export default defineComponent({
         function selectVideo(video) {
             selectedVideo.value = video
             activeTab.value = 'summary' // Reset to summary tab when a new video is selected
+        }
+
+        const renderMarkdown = (text) => {
+            return marked(text || '') // Convert text to Markdown or return empty if undefined
         }
 
         // Function to extract YouTube video ID from URL
@@ -318,7 +327,7 @@ export default defineComponent({
             // Prepare series data
             const series = specifiedCategories
                 .filter(category => selectedCategories.value.includes(category))
-                .map(category => {
+                .map((category, index) => {
                     const dataPoints = dates.map(date => categoryCounts[category]?.[date] || 0)
                     return {
                         name: category,
@@ -375,7 +384,7 @@ export default defineComponent({
                             return `<div style="display: flex; align-items: center; margin-bottom: 5px;">
                                 <img src="${thumbnailUrl}" alt="Thumbnail" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; margin-right: 5px;">
                                 <div style="line-height: 1.2;">
-                                    <div style="font-size: 0.85em; color: #666;">${video.channel}</div>
+                                    <div style=" color: #666;">${video.channel}</div>
                                     <a href="#" class="video-link" 
                                     data-url="${video.url}"
                                     data-title="${video.title}"
@@ -439,6 +448,7 @@ export default defineComponent({
 
         return {
             chartRef,
+            renderMarkdown,
             youtubers,
             selectedYoutubers,
             specifiedCategories,
@@ -458,6 +468,39 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.main-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.youtuber-panel {
+    flex: 0 0 200px; /* Adjust width as needed */
+    border-right: 1px solid #ccc;
+    padding: px;
+    box-sizing: border-box;
+}
+
+.youtuber-panel  label{
+    padding-bottom: 15px;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+}
+
+.left-side {
+    flex: 2;
+    min-width: 300px;
+}
+
+.right-side {
+    flex: 1;
+    min-width: 300px;
+    margin-left: 20px;
+    font-family: sans-serif;
+}
+
 .filter-section {
 
     display: flex;
@@ -551,23 +594,6 @@ export default defineComponent({
     border-top: solid 1px #333;
     margin-top: 20px;
     margin-bottom: 20px;
-}
-
-.main-container {
-    font-family: sans-serif;
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.left-side {
-    flex: 2;
-    min-width: 300px;
-}
-
-.right-side {
-    flex: 1;
-    min-width: 300px;
-    margin-left: 20px;
 }
 
 .video-iframe {

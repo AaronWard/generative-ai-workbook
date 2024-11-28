@@ -1,5 +1,5 @@
 ### Purpose
-Summarize a YouTube video to capture the main topics and themes, especially related to AI and LLMs. The purpose of this summary is to allow for topic categorization based on a predefined list of topics, so make sure you include all relevant information around any frameworks, tools, or technologies discussed.
+you MUST Summarize a YouTube video to capture the main topics and themes, especially related to AI and LLMs. The purpose of this summary is to allow for topic categorization based on a predefined list of topics, so make sure you include all relevant information around any frameworks, tools, or technologies discussed.
 
 ### Instructions
 1. Read the provided title, description, and transcript of a YouTube video. Note that the transcript may not be available.

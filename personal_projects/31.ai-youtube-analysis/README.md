@@ -27,6 +27,10 @@ The following is a showcase of ControlFlow in action. To do something interestin
 YOUTUBE_API_KEY=****
 ```
 
+## RAG on Youtube Channels Content
+
+- `cd` to data and run `python query_db.py`
+
 
 ###  Here are some of the Channels:
 - https://www.youtube.com/@vrsen/videos

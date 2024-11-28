@@ -1,9 +1,10 @@
-# query_db.py
-
 import os
 import chromadb
 from chromadb.utils import embedding_functions
 import openai
+import controlflow as cf
+# Import the custom ChromaMemory
+from CustomChromaMemory import CustomChromaMemory
 
 # Set your OpenAI API key
 openai.api_key = os.environ.get('OPENAI_API_KEY')
@@ -28,47 +29,86 @@ collection = client.get_collection(
     embedding_function=embedding_function
 )
 
-def query_database(query_text, n_results=5):
+# Create the CustomChromaMemory provider for ControlFlow
+provider = CustomChromaMemory(
+    client=client,
+    collection_name=collection_name,
+    embedding_function=embedding_function
+)
+
+# Create the Memory object
+memory = cf.Memory(
+    key=key,
+    instructions="""
+    This memory stores information about YouTube videos, including their titles, summaries, descriptions, and categories.
+    - Use this memory to retrieve information about videos when needed.
+    - Add to this memory when new video data is available.
+    """,
+    provider=provider
+)
+
+# Define the ControlFlow agent
+agent = cf.Agent(
+    name="YouTube Assistant",
+    instructions="""
+    You are a helpful assistant that provides information about YouTube videos. you must ONLY use the provided documents 
+    to inform your responses.\n Otherwise, say you do have any record in your knowledge base. Provide dates for events you talk about in your response.
+    """,
+    memories=[memory]
+)
+
+def query_database_and_respond(query_text, n_results=5):
     """
-    Query the vector database for relevant documents.
+    Query the vector database for relevant documents and use an agent to generate a response.
     
     Args:
         query_text (str): The query string to search for.
         n_results (int): Number of top results to retrieve.
 
     Returns:
-        list: A list of dictionaries containing document content and metadata.
+        str: Agent's response to the query with links to relevant videos.
     """
-    # Perform the query
+    # Query the database
     results = collection.query(
         query_texts=[query_text],
         n_results=n_results
     )
     
-    # Format the results
-    documents = []
-    for doc, metadata in zip(results['documents'][0], results['metadatas'][0]):
-        documents.append({
-            "content": doc,
-            "metadata": metadata
-        })
+    # Format the retrieved documents for the agent
+    links = []  # To store video URLs
+    if 'documents' in results and results['documents']:
+        retrieved_docs = []
+        for doc, metadata in zip(results['documents'][0], results['metadatas'][0]):
+            retrieved_docs.append(f"Content: {doc}\nMetadata: {metadata}")
+            if 'url' in metadata:
+                links.append(metadata['url'])
+    else:
+        retrieved_docs = ["No relevant documents found."]
     
-    return documents
+    # Combine retrieved documents into context for the agent
+    context = "\n\n".join(retrieved_docs)
+    
+    # Use the ControlFlow agent to generate a response
+    agent_response = cf.run(
+        f"The user asked: {query_text}\n\nBased on the following retrieved documents:\n\n{context}\n\nReally capture the essence of the query and the context.",
+        agents=[agent]
+    )
+    
+    # Add links to the response
+    if links:
+        links_text = "\n".join([f"- {link}" for link in links])
+        agent_response += f"\n\nIf you're interested in more, you should take a look at these videos:\n{links_text}"
+    
+    return agent_response
 
 if __name__ == "__main__":
     # Prompt user for a query
     query_text = input("Enter your query: ")
-    n_results = int(input("Enter the number of results to retrieve (default is 5): ") or 5)
+    n_results = 2
     
-    # Query the database
-    results = query_database(query_text, n_results)
+    # Get the response from the RAG system
+    response = query_database_and_respond(query_text, n_results)
     
-    # Display results
-    if results:
-        print("\nQuery Results:")
-        for i, result in enumerate(results):
-            print(f"\nResult {i + 1}:")
-            print("Content:", result["content"])
-            print("Metadata:", result["metadata"])
-    else:
-        print("No results found.")
+    # Display the response
+    print("\nAgent Response:")
+    print(response)

@@ -2,6 +2,11 @@
 
 ## AI Youtube Analysis
 
+
+
+![image](./trendtube.gif)
+
+
 The following is a showcase of ControlFlow in action. To do something interesting, I've built a tool that can analyse a youtube channel and give you a summary of the videos and the functionalities that are covered in each video. This data is stored in the /data folder in json format.
 ```
  {

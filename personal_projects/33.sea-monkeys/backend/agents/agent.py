@@ -17,18 +17,14 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-## AGENTS MUST USE STRUCTURED OUTPUTS:
-
+# AGENTS MUST USE STRUCTURED OUTPUTS:
 class ActionResponse(BaseModel):
-  action: str
+    action: str
 #   parameters: dict
-
-
 class PerceiveResponse(BaseModel):
-  pass
-  
+    pass
 class ThinkRepsonse(BaseModel):
-  pass
+    pass
 
 class Agent:
     def __init__(self, agent_id: int, position: Dict[str, float]):
@@ -40,8 +36,10 @@ class Agent:
         self.surroundings = ""
 
     def perceive(self, surroundings):
-        # Awareness: Get data about surroundings
         self.surroundings = surroundings
+        # TODO: Mix of rule + AI generated perception logic here
+        #
+
 
     def think(self):
         # Thoughts: Decide what to do based on surroundings
@@ -66,14 +64,14 @@ It's your job to pick a suitable action.
 
         try:
             response: ChatResponse = chat(model='qwen:0.5b',
-                                          messages=messages,
-                                          format=ActionResponse.model_json_schema(),
-                                          options={'temperature': 0.9},
-                                          )
+                                        messages=messages,
+                                        format=ActionResponse.model_json_schema(),
+                                        options={'temperature': 0.9},
+                                        )
 
             action_output = response.message.content.strip()
             print(f"Agent {self.agent_id}'s response: {action_output}")
-            self.action = json.loads(action_output)    
+            self.action = json.loads(action_output)
 
             if self.action == "MoveForward":
                 self.direction = {'x': 0, 'y': 0, 'z': 1}
@@ -94,12 +92,21 @@ It's your job to pick a suitable action.
                     'y': random.uniform(-1, 1),
                     'z': random.uniform(-1, 1)
                 }
-            
         except Exception as e:
             print(f"Error in think(): {e}")
             # Default action
             self.action = {"action": "MoveForward"}
-    
+
+    # def act(self):
+    #     # Move in the current direction
+    #     speed = 1 / 10  # Units per time step; adjust as needed
+    #     for axis in ['x', 'y', 'z']:
+    #         self.position[axis] += self.direction[axis] * speed
+
+    #     # Ensure the sea monkey stays within bounds (-50 to 50)
+    #     for axis in ['x', 'y', 'z']:
+    #         self.position[axis] = max(min(self.position[axis], 50), -50)
+
     def act(self):
         # Move in the current direction
         speed = 1  # Units per simulation step; adjust as needed

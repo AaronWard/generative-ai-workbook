@@ -7,6 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from agents.agent import Agent
 import random
+import json
+from pydantic import BaseModel, Field
+
 
 from utils.agent_utils import compute_surroundings
 
@@ -14,6 +17,11 @@ from utils.agent_utils import compute_surroundings
 load_dotenv(find_dotenv())
 
 app = FastAPI()
+
+class ChatRequest(BaseModel):
+    format: str = Field(..., description="The format of the request. Can be '' or 'json'.")
+    properties: dict = Field(..., description="Properties for the chat request.")
+
 
 # Add CORS middleware
 app.add_middleware(
@@ -39,7 +47,7 @@ agents = [
 
 
 @app.post("/simulate")
-def simulate():
+def simulate(request: ChatRequest):
     # Simulate one time step
     for agent in agents:
         # Compute surroundings
@@ -48,6 +56,20 @@ def simulate():
         agent.think()
         agent.act()
     return {"status": "Simulation step completed"}
+
+
+# @app.post("/simulate")
+# def simulate():
+#     # Simulate one time step
+#     for agent in agents:
+#         # Compute surroundings
+#         surroundings = compute_surroundings(agent, agents)
+#         agent.perceive(surroundings)
+#         # You should add some print statements here to see the values of 'action' and 'response'
+#         action = {'properties': {'action': '', 'type': 'object'}}
+#         response = agent.act(action)  # Call think() method
+#     return {"status": "Simulation step completed"}
+
 
 @app.get("/agents")
 def get_agents():

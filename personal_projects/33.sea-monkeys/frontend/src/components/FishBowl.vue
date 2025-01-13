@@ -170,7 +170,7 @@ export default defineComponent({
 
           // Scale the glb so we can see it in radius=50 bowl
           // If the bounding box is super small, try 50 or 100
-          clonedMonkey.scale.set(50, 50, 50);
+          clonedMonkey.scale.set(100, 100, 100);
 
           // Optional: ensure pivot is at center if needed
           // e.g. if the model is offset

@@ -15,7 +15,7 @@ class ActionResponse(BaseModel):
 class Agent:
     def __init__(self, agent_id: int, position: dict):
         self.agent_id = agent_id
-        self.position = position  # {'x': float, 'y': float, 'z': float}
+        self.position = position 
         self.goal = None
         self.action = None
         self.direction = {'x': 0.0, 'y': 0.0, 'z': 0.0}

@@ -10,6 +10,9 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 
+// 1) Import RGBELoader for environment
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+
 export default defineComponent({
   name: "FishBowl",
 
@@ -18,11 +21,10 @@ export default defineComponent({
       seaMonkeyModel: null,
       seaMonkeyAnimations: null,
       agentMeshMap: {},
-      mixerMap: {}, // agent_id -> AnimationMixer
-
+      mixerMap: {}, 
       refreshIntervalId: null,
       animationId: null,
-      clock: new THREE.Clock(), // needed for animation updates
+      clock: new THREE.Clock(),
     };
   },
 
@@ -43,14 +45,16 @@ export default defineComponent({
       })
     );
 
-    // ---- color space config ----
+    // 2) For PBR materials, enable physically correct lighting, tone mapping, etc.
+    this.renderer.physicallyCorrectLights = true;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+
+    // 3) sRGB output encoding so texture colors look correct
     this.renderer.outputEncoding = THREE.sRGBEncoding; 
-    // Optional advanced PBR settings:
-    // this.renderer.physicallyCorrectLights = true;
-    // this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    // this.renderer.toneMappingExposure = 1.0;
 
     this.initScene();
+    this.loadEnvironment(); // <-- Load an HDR environment
     this.loadSeaMonkeyModel()
       .then(() => {
         console.log("SeaMonkey .glb loaded. Starting animation...");
@@ -79,14 +83,16 @@ export default defineComponent({
       this.renderer.setSize(window.innerWidth, window.innerHeight);
 
       // Controls
-      this.controls = markRaw(new OrbitControls(this.camera, this.renderer.domElement));
+      this.controls = markRaw(
+        new OrbitControls(this.camera, this.renderer.domElement)
+      );
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
       this.controls.minDistance = 10;
       this.controls.maxDistance = 200;
 
-      // Lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+      // Basic lights (still helpful along with environment)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
       this.scene.add(ambientLight);
 
       const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -107,41 +113,58 @@ export default defineComponent({
       window.addEventListener("resize", this.onWindowResize);
     },
 
+    // 4) Create a function to load an HDR environment
+    loadEnvironment() {
+      const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+      pmremGenerator.compileEquirectangularShader();
+
+      const rgbeLoader = new RGBELoader();
+      // Provide your own .hdr file in public/envmaps/:
+      const hdrPath = import.meta.env.BASE_URL + "envmaps/studio_small_08_hd.hdr";
+
+      rgbeLoader.load(hdrPath, (texture) => {
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+        this.scene.environment = envMap;
+        // Optional: scene.background = envMap;
+        texture.dispose();
+        pmremGenerator.dispose();
+      });
+    },
+
     loadSeaMonkeyModel() {
       return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
-        const modelPath = import.meta.env.BASE_URL + "models/sea_monkey.glb";
+        const modelPath = import.meta.env.BASE_URL + "models/shadow_leviathan.glb";
 
         loader.load(
           modelPath,
           (gltf) => {
-            // 1) Access the scene and animations
             const { scene, animations } = gltf;
             console.log("3D model loaded:", gltf);
 
-            // 2) Ensure materials load with color
+            // If your model is authored with high metalness, you can clamp it down:
             scene.traverse((child) => {
-              if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-
-                // If there's a texture map, set it to sRGB
+              if (child.isMesh && child.material) {
+                // Ensure map is in sRGB:
                 if (child.material.map) {
                   child.material.map.encoding = THREE.sRGBEncoding;
                 }
+
+                // If still dark, override metalness or roughness:
+                // child.material.metalness = 0;
+                // child.material.roughness = 0.5;
+
                 child.material.needsUpdate = true;
               }
             });
 
-            // Store the scene and animations
             this.seaMonkeyModel = markRaw(scene);
             this.seaMonkeyAnimations = animations;
-
             resolve();
           },
           (xhr) => {
             const progress = (xhr.loaded / xhr.total) * 100;
-            console.log(`sea_monkey.glb loading: ${progress.toFixed(2)}%`);
+            console.log(`shadow_leviathan.glb loading: ${progress.toFixed(2)}%`);
           },
           (error) => {
             reject(error);
@@ -151,7 +174,6 @@ export default defineComponent({
     },
 
     startSimulationLoop() {
-      // Poll the backend every 2s
       this.refreshIntervalId = setInterval(async () => {
         try {
           await axios.post("http://localhost:8000/simulate");
@@ -166,19 +188,18 @@ export default defineComponent({
     updateAgents(agents) {
       agents.forEach(({ agent_id, position }) => {
         if (!this.agentMeshMap[agent_id]) {
-          // Clone the base sea monkey
           const clonedMonkey = markRaw(SkeletonUtils.clone(this.seaMonkeyModel));
 
           // Random initial rotation
           clonedMonkey.rotation.y = Math.random() * 2 * Math.PI;
 
-          // Scale up if needed
-          clonedMonkey.scale.set(400, 400, 400);
+          // Scale up
+          clonedMonkey.scale.set(50, 50, 50);
 
           // Add to the scene
           this.scene.add(clonedMonkey);
 
-          // Create an AnimationMixer if there's at least one animation
+          // If there are animations, create a mixer:
           if (this.seaMonkeyAnimations?.length) {
             const mixer = new THREE.AnimationMixer(clonedMonkey);
             const clip = this.seaMonkeyAnimations[0];
@@ -187,14 +208,17 @@ export default defineComponent({
             this.mixerMap[agent_id] = mixer;
           }
 
-          // Store the reference
           this.agentMeshMap[agent_id] = clonedMonkey;
         }
 
-        // Instead of snapping position, store a "target position"
+        // Smooth movement with userData.targetPosition
         const mesh = this.agentMeshMap[agent_id];
         if (!mesh.userData.targetPosition) {
-          mesh.userData.targetPosition = new THREE.Vector3(position.x, position.y, position.z);
+          mesh.userData.targetPosition = new THREE.Vector3(
+            position.x,
+            position.y,
+            position.z
+          );
         } else {
           mesh.userData.targetPosition.set(position.x, position.y, position.z);
         }
@@ -204,25 +228,21 @@ export default defineComponent({
     animate() {
       this.animationId = requestAnimationFrame(this.animate);
 
-      // Update animation mixers
       const delta = this.clock.getDelta();
       Object.keys(this.mixerMap).forEach((id) => {
         this.mixerMap[id].update(delta);
       });
 
-      // Smoothly lerp each mesh toward its target
+      // Lerp toward target
       Object.values(this.agentMeshMap).forEach((mesh) => {
         if (mesh.userData.targetPosition) {
           mesh.position.lerp(mesh.userData.targetPosition, 0.1);
         }
       });
 
-      // Update controls
       if (this.controls) {
         this.controls.update();
       }
-
-      // Render
       this.renderer.render(this.scene, this.camera);
     },
 

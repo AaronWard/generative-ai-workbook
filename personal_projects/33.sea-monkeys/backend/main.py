@@ -28,9 +28,9 @@ agents = [
     Agent(
         agent_id=i,
         position={
-            'x': random.uniform(-20, 20),
-            'y': random.uniform(-20, 20),
-            'z': random.uniform(-20, 20),
+            'x': random.uniform(-50, 50),
+            'y': random.uniform(-50, 50),
+            'z': random.uniform(-50, 50),
         },
     )
     for i in range(1, 10)  # 5 agents

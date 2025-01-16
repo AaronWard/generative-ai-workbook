@@ -1,77 +1,68 @@
 # agents/agent.py
 
-from ollama import ChatResponse
-from ollama import chat
 import random
-from typing import Dict
 import os
 import json
 from dotenv import load_dotenv
-from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from ollama import ChatResponse, chat
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# Initialize OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-# AGENTS MUST USE STRUCTURED OUTPUTS:
 class ActionResponse(BaseModel):
     action: str
-#   parameters: dict
-class PerceiveResponse(BaseModel):
-    pass
-class ThinkRepsonse(BaseModel):
-    pass
 
 class Agent:
-    def __init__(self, agent_id: int, position: Dict[str, float]):
+    def __init__(self, agent_id: int, position: dict):
         self.agent_id = agent_id
         self.position = position  # {'x': float, 'y': float, 'z': float}
         self.goal = None
         self.action = None
-        self.direction = {'x': 0.0, 'y': 0.0, 'z': 0.0}  # New attribute
+        self.direction = {'x': 0.0, 'y': 0.0, 'z': 0.0}
         self.surroundings = ""
 
     def perceive(self, surroundings):
         self.surroundings = surroundings
-        # TODO: Mix of rule + AI generated perception logic here
-        #
-
 
     def think(self):
-        # Thoughts: Decide what to do based on surroundings
-
         messages = [
             {"role": "system", "content": "You are a sea monkey in a fishbowl."},
-            {"role": "user", "content": f"""
+            {
+                "role": "user",
+                "content": f"""
 Your current position is {self.position}.
 Your surroundings are {self.surroundings}.
 Decide on an action to move within the fishbowl.
 
 Possible actions:
-- `MoveForward`: Move forward along the z-axis.
-- `TurnLeft`: Move left along the x-axis.
-- `TurnRight`: Move right along the x-axis.
-- `MoveUp`: Move up along the y-axis.
-- `MoveDown`: Move down along the y-axis.
+- MoveForward
+- TurnLeft
+- TurnRight
+- MoveUp
+- MoveDown
+- StayStill
 
-It's your job to pick a suitable action.
-"""},
+Please provide JSON with a single key 'action' that is one of the above.
+""",
+            },
         ]
 
         try:
-            response: ChatResponse = chat(model='qwen:0.5b',
-                                        messages=messages,
-                                        format=ActionResponse.model_json_schema(),
-                                        options={'temperature': 0.9},
-                                        )
+            # 2) Pass the Pydantic model’s JSON schema as the format:
+            response: ChatResponse = chat(
+                model='qwen:0.5b',
+                messages=messages,
+                format=ActionResponse.model_json_schema(),
+                options={'temperature': 1.0},
+            )
 
-            action_output = response.message.content.strip()
-            print(f"Agent {self.agent_id}'s response: {action_output}")
-            self.action = json.loads(action_output)
+            # 3) The LLM returns a message in the shape of ActionResponse. 
+            #    Parse it with Pydantic:
+            parsed_output = ActionResponse.model_validate_json(response.message.content)
+
+            # 4) Use the action
+            self.action = parsed_output.action
+            print(f"Agent {self.agent_id}'s LLM-chosen action: {self.action}")
 
             if self.action == "MoveForward":
                 self.direction = {'x': 0, 'y': 0, 'z': 1}
@@ -83,37 +74,31 @@ It's your job to pick a suitable action.
                 self.direction = {'x': 0, 'y': 1, 'z': 0}
             elif self.action == "MoveDown":
                 self.direction = {'x': 0, 'y': -1, 'z': 0}
-            elif self.action == "StayStill":
-                self.direction = {'x': 0, 'y': 0, 'z': 0}
             else:
-                # Random movement if action is unknown
+                # If unknown, random movement
                 self.direction = {
                     'x': random.uniform(-1, 1),
                     'y': random.uniform(-1, 1),
-                    'z': random.uniform(-1, 1)
+                    'z': random.uniform(-1, 1),
                 }
+
+        except ValidationError as ve:
+            print(f"Error parsing LLM JSON into ActionResponse: {ve}")
+            # Default fallback:
+            self.action = "MoveForward"
+            self.direction = {'x': 0, 'y': 0, 'z': 1}
+
         except Exception as e:
             print(f"Error in think(): {e}")
-            # Default action
-            self.action = {"action": "MoveForward"}
-
-    # def act(self):
-    #     # Move in the current direction
-    #     speed = 1 / 10  # Units per time step; adjust as needed
-    #     for axis in ['x', 'y', 'z']:
-    #         self.position[axis] += self.direction[axis] * speed
-
-    #     # Ensure the sea monkey stays within bounds (-50 to 50)
-    #     for axis in ['x', 'y', 'z']:
-    #         self.position[axis] = max(min(self.position[axis], 50), -50)
+            self.action = "MoveForward"
+            self.direction = {'x': 0, 'y': 0, 'z': 1}
 
     def act(self):
-        # Move in the current direction
-        speed = 1  # Units per simulation step; adjust as needed
+        speed = 1
         self.position['x'] += self.direction['x'] * speed
         self.position['y'] += self.direction['y'] * speed
         self.position['z'] += self.direction['z'] * speed
 
-        # Ensure the sea monkey stays within bounds (-50 to 50)
+        # Boundaries
         for axis in ['x', 'y', 'z']:
             self.position[axis] = max(min(self.position[axis], 50), -50)

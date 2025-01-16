@@ -7,10 +7,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from agents.agent import Agent
 import random
-import json
-from pydantic import BaseModel, Field
-
-
 from utils.agent_utils import compute_surroundings
 
 # Load environment variables
@@ -18,57 +14,38 @@ load_dotenv(find_dotenv())
 
 app = FastAPI()
 
-class ChatRequest(BaseModel):
-    format: str = Field(..., description="The format of the request. Can be '' or 'json'.")
-    properties: dict = Field(..., description="Properties for the chat request.")
-
-
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend origin
+    allow_origins=["http://localhost:5173"],  # adjust as needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize agents
+# Initialize some agents
 agents = [
     Agent(
         agent_id=i,
         position={
             'x': random.uniform(-20, 20),
             'y': random.uniform(-20, 20),
-            'z': random.uniform(-20, 20)
-        }
+            'z': random.uniform(-20, 20),
+        },
     )
-    for i in range(1, 6)  # Create 5 agents
+    for i in range(1, 10)  # 5 agents
 ]
 
 
 @app.post("/simulate")
-def simulate(request: ChatRequest):
-    # Simulate one time step
+def simulate():
+    # Simulate one time step for each agent
     for agent in agents:
-        # Compute surroundings
         surroundings = compute_surroundings(agent, agents)
         agent.perceive(surroundings)
         agent.think()
         agent.act()
     return {"status": "Simulation step completed"}
-
-
-# @app.post("/simulate")
-# def simulate():
-#     # Simulate one time step
-#     for agent in agents:
-#         # Compute surroundings
-#         surroundings = compute_surroundings(agent, agents)
-#         agent.perceive(surroundings)
-#         # You should add some print statements here to see the values of 'action' and 'response'
-#         action = {'properties': {'action': '', 'type': 'object'}}
-#         response = agent.act(action)  # Call think() method
-#     return {"status": "Simulation step completed"}
 
 
 @app.get("/agents")
@@ -81,6 +58,7 @@ def get_agents():
         }
         for agent in agents
     ]
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

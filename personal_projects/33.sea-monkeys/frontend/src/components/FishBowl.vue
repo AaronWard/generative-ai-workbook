@@ -1,5 +1,4 @@
 <template>
-  <!-- We only have a single <canvas> for the Three.js scene. -->
   <canvas ref="canvas"></canvas>
 </template>
 
@@ -16,20 +15,19 @@ export default defineComponent({
 
   data() {
     return {
-      // We'll store a reference to the loaded .glb (non-reactively).
       seaMonkeyModel: null,
-
-      // agent_id -> cloned mesh
       agentMeshMap: {},
-
-      // Interval & animation
       refreshIntervalId: null,
       animationId: null,
+
+      // NEW: We'll store one or more mixers for animation:
+      mixerMap: {}, // agent_id -> AnimationMixer
+
+      clock: new THREE.Clock(), // needed for animation updates
     };
   },
 
   mounted() {
-    // 1) Create non-reactive references for scene, camera, renderer
     this.scene = markRaw(new THREE.Scene());
     this.camera = markRaw(
       new THREE.PerspectiveCamera(
@@ -45,12 +43,8 @@ export default defineComponent({
         antialias: true,
       })
     );
-    this.controls = null; // define later
 
-    // 2) Initialize the Three.js environment
     this.initScene();
-
-    // 3) Load the .glb model, then start animate() + poll the API
     this.loadSeaMonkeyModel()
       .then(() => {
         console.log("SeaMonkey .glb loaded. Starting animation...");
@@ -64,7 +58,6 @@ export default defineComponent({
   },
 
   beforeUnmount() {
-    // Cleanup intervals / event listeners
     if (this.animationId) cancelAnimationFrame(this.animationId);
     if (this.refreshIntervalId) clearInterval(this.refreshIntervalId);
     window.removeEventListener("resize", this.onWindowResize);
@@ -72,21 +65,21 @@ export default defineComponent({
 
   methods: {
     initScene() {
-      // Position camera
+      // Camera
       this.camera.position.set(0, 50, 100);
       this.camera.lookAt(this.scene.position);
 
       // Renderer
       this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // OrbitControls
+      // Controls
       this.controls = markRaw(new OrbitControls(this.camera, this.renderer.domElement));
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
       this.controls.minDistance = 10;
       this.controls.maxDistance = 200;
 
-      // Ambient + directional lights
+      // Lights
       const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
       this.scene.add(ambientLight);
 
@@ -94,7 +87,7 @@ export default defineComponent({
       directionalLight.position.set(10, 10, 10);
       this.scene.add(directionalLight);
 
-      // Fishbowl geometry (wireframe sphere of radius 50)
+      // Fishbowl geometry
       const bowlGeometry = new THREE.SphereGeometry(50, 32, 32);
       const bowlMaterial = new THREE.MeshBasicMaterial({
         color: 0xadd8e6,
@@ -110,19 +103,36 @@ export default defineComponent({
 
     /**
      * Loads the .glb sea monkey model from /public/models/sea_monkey.glb
-     * Mark as non-reactive so Vue won't proxy it.
+     * and ensures it has materials/animations.
      */
     loadSeaMonkeyModel() {
       return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
         const modelPath = import.meta.env.BASE_URL + "models/sea_monkey.glb";
-        console.log("Loading sea_monkey from:", modelPath);
 
         loader.load(
           modelPath,
           (gltf) => {
-            this.seaMonkeyModel = markRaw(gltf.scene);
+            // 1) Access the scene and animations
+            const { scene, animations } = gltf;
             console.log("3D model loaded:", gltf);
+
+            // 2) This ensures the materials are kept
+            scene.traverse((child) => {
+              if (child.isMesh) {
+                // If you see a dull gray, you might need to tweak material settings:
+                // e.g. child.material = new THREE.MeshStandardMaterial({ map: yourTexture });
+                // But usually the glTF loader sets child.material automatically if textures are embedded.
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+
+            // 3) Save them as non-reactive
+            this.seaMonkeyModel = markRaw(scene);
+            // We'll also store the animations in case you need them:
+            this.seaMonkeyAnimations = animations;
+
             resolve();
           },
           (xhr) => {
@@ -136,16 +146,11 @@ export default defineComponent({
       });
     },
 
-    /**
-     * Calls /simulate then /agents every 2 seconds, updating agent positions in 3D.
-     */
     startSimulationLoop() {
+      // Poll the backend every 2s
       this.refreshIntervalId = setInterval(async () => {
         try {
-          console.log("[FishBowl] POST /simulate");
           await axios.post("http://localhost:8000/simulate");
-          
-          console.log("[FishBowl] GET /agents");
           const res = await axios.get("http://localhost:8000/agents");
           this.updateAgents(res.data);
         } catch (err) {
@@ -155,49 +160,65 @@ export default defineComponent({
     },
 
     /**
-     * For each agent, clone or update a 3D sea monkey.
+     * For each agent, clone or update a 3D sea monkey with materials & animations
      */
     updateAgents(agents) {
       agents.forEach(({ agent_id, position }) => {
-        // If we don't have a mesh for this agent yet, clone the .glb
+        // If no mesh for this agent yet, clone from the seaMonkeyModel
         if (!this.agentMeshMap[agent_id]) {
           if (!this.seaMonkeyModel) {
             console.warn("seaMonkeyModel not loaded yet.");
             return;
           }
-          // Clone
+
           const clonedMonkey = markRaw(SkeletonUtils.clone(this.seaMonkeyModel));
+          // Scale up if needed
+          clonedMonkey.scale.set(300, 300, 300);
 
-          // Scale the glb so we can see it in radius=50 bowl
-          // If the bounding box is super small, try 50 or 100
-          clonedMonkey.scale.set(100, 100, 100);
-
-          // Optional: ensure pivot is at center if needed
-          // e.g. if the model is offset
-
-          // Add to the scene
+          // Add to scene
           this.scene.add(clonedMonkey);
+
+          // Create a new AnimationMixer *if* we have animations
+          if (this.seaMonkeyAnimations && this.seaMonkeyAnimations.length > 0) {
+            const mixer = new THREE.AnimationMixer(clonedMonkey);
+
+            // Start playing the *first* animation
+            // (If your model has multiple animations, you might pick which to play)
+            const clip = this.seaMonkeyAnimations[0];
+            const action = mixer.clipAction(clip);
+            action.play();
+
+            this.mixerMap[agent_id] = mixer;
+          }
 
           // Save reference
           this.agentMeshMap[agent_id] = clonedMonkey;
         }
 
-        // Update the position for this agent
+        // Update position
         const mesh = this.agentMeshMap[agent_id];
         mesh.position.set(position.x, position.y, position.z);
       });
-
-      // (Optional) remove meshes for agents that no longer exist
     },
 
     /**
-     * The main Three.js rendering loop
+     * The main Three.js render loop
      */
     animate() {
       this.animationId = requestAnimationFrame(this.animate);
+
+      // 1) Update all mixers
+      const delta = this.clock.getDelta();
+      Object.keys(this.mixerMap).forEach((id) => {
+        this.mixerMap[id].update(delta);
+      });
+
+      // 2) Update controls
       if (this.controls) {
         this.controls.update();
       }
+
+      // 3) Render scene
       this.renderer.render(this.scene, this.camera);
     },
 

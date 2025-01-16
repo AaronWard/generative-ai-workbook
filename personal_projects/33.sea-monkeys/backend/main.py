@@ -28,12 +28,12 @@ agents = [
     Agent(
         agent_id=i,
         position={
-            'x': random.uniform(-50, 50),
-            'y': random.uniform(-50, 50),
-            'z': random.uniform(-50, 50),
+            'x': random.uniform(-10, 20),
+            'y': random.uniform(-10, 20),
+            'z': random.uniform(-10, 20),
         },
     )
-    for i in range(1, 10)  # 5 agents
+    for i in range(1, 15)  # 5 agents
 ]
 
 

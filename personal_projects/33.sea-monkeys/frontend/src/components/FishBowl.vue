@@ -194,7 +194,7 @@ export default defineComponent({
           clonedMonkey.rotation.y = Math.random() * 2 * Math.PI;
 
           // Scale up
-          clonedMonkey.scale.set(50, 50, 50);
+          clonedMonkey.scale.set(30, 30, 30);
 
           // Add to the scene
           this.scene.add(clonedMonkey);

@@ -16,13 +16,12 @@ export default defineComponent({
   data() {
     return {
       seaMonkeyModel: null,
+      seaMonkeyAnimations: null,
       agentMeshMap: {},
-      refreshIntervalId: null,
-      animationId: null,
-
-      // NEW: We'll store one or more mixers for animation:
       mixerMap: {}, // agent_id -> AnimationMixer
 
+      refreshIntervalId: null,
+      animationId: null,
       clock: new THREE.Clock(), // needed for animation updates
     };
   },
@@ -43,6 +42,13 @@ export default defineComponent({
         antialias: true,
       })
     );
+
+    // ---- color space config ----
+    this.renderer.outputEncoding = THREE.sRGBEncoding; 
+    // Optional advanced PBR settings:
+    // this.renderer.physicallyCorrectLights = true;
+    // this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // this.renderer.toneMappingExposure = 1.0;
 
     this.initScene();
     this.loadSeaMonkeyModel()
@@ -101,10 +107,6 @@ export default defineComponent({
       window.addEventListener("resize", this.onWindowResize);
     },
 
-    /**
-     * Loads the .glb sea monkey model from /public/models/sea_monkey.glb
-     * and ensures it has materials/animations.
-     */
     loadSeaMonkeyModel() {
       return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
@@ -117,20 +119,22 @@ export default defineComponent({
             const { scene, animations } = gltf;
             console.log("3D model loaded:", gltf);
 
-            // 2) This ensures the materials are kept
+            // 2) Ensure materials load with color
             scene.traverse((child) => {
               if (child.isMesh) {
-                // If you see a dull gray, you might need to tweak material settings:
-                // e.g. child.material = new THREE.MeshStandardMaterial({ map: yourTexture });
-                // But usually the glTF loader sets child.material automatically if textures are embedded.
                 child.castShadow = true;
                 child.receiveShadow = true;
+
+                // If there's a texture map, set it to sRGB
+                if (child.material.map) {
+                  child.material.map.encoding = THREE.sRGBEncoding;
+                }
+                child.material.needsUpdate = true;
               }
             });
 
-            // 3) Save them as non-reactive
+            // Store the scene and animations
             this.seaMonkeyModel = markRaw(scene);
-            // We'll also store the animations in case you need them:
             this.seaMonkeyAnimations = animations;
 
             resolve();
@@ -159,66 +163,66 @@ export default defineComponent({
       }, 2000);
     },
 
-    /**
-     * For each agent, clone or update a 3D sea monkey with materials & animations
-     */
     updateAgents(agents) {
       agents.forEach(({ agent_id, position }) => {
-        // If no mesh for this agent yet, clone from the seaMonkeyModel
         if (!this.agentMeshMap[agent_id]) {
-          if (!this.seaMonkeyModel) {
-            console.warn("seaMonkeyModel not loaded yet.");
-            return;
-          }
-
+          // Clone the base sea monkey
           const clonedMonkey = markRaw(SkeletonUtils.clone(this.seaMonkeyModel));
-          // Scale up if needed
-          clonedMonkey.scale.set(300, 300, 300);
 
-          // Add to scene
+          // Random initial rotation
+          clonedMonkey.rotation.y = Math.random() * 2 * Math.PI;
+
+          // Scale up if needed
+          clonedMonkey.scale.set(400, 400, 400);
+
+          // Add to the scene
           this.scene.add(clonedMonkey);
 
-          // Create a new AnimationMixer *if* we have animations
-          if (this.seaMonkeyAnimations && this.seaMonkeyAnimations.length > 0) {
+          // Create an AnimationMixer if there's at least one animation
+          if (this.seaMonkeyAnimations?.length) {
             const mixer = new THREE.AnimationMixer(clonedMonkey);
-
-            // Start playing the *first* animation
-            // (If your model has multiple animations, you might pick which to play)
             const clip = this.seaMonkeyAnimations[0];
             const action = mixer.clipAction(clip);
             action.play();
-
             this.mixerMap[agent_id] = mixer;
           }
 
-          // Save reference
+          // Store the reference
           this.agentMeshMap[agent_id] = clonedMonkey;
         }
 
-        // Update position
+        // Instead of snapping position, store a "target position"
         const mesh = this.agentMeshMap[agent_id];
-        mesh.position.set(position.x, position.y, position.z);
+        if (!mesh.userData.targetPosition) {
+          mesh.userData.targetPosition = new THREE.Vector3(position.x, position.y, position.z);
+        } else {
+          mesh.userData.targetPosition.set(position.x, position.y, position.z);
+        }
       });
     },
 
-    /**
-     * The main Three.js render loop
-     */
     animate() {
       this.animationId = requestAnimationFrame(this.animate);
 
-      // 1) Update all mixers
+      // Update animation mixers
       const delta = this.clock.getDelta();
       Object.keys(this.mixerMap).forEach((id) => {
         this.mixerMap[id].update(delta);
       });
 
-      // 2) Update controls
+      // Smoothly lerp each mesh toward its target
+      Object.values(this.agentMeshMap).forEach((mesh) => {
+        if (mesh.userData.targetPosition) {
+          mesh.position.lerp(mesh.userData.targetPosition, 0.1);
+        }
+      });
+
+      // Update controls
       if (this.controls) {
         this.controls.update();
       }
 
-      // 3) Render scene
+      // Render
       this.renderer.render(this.scene, this.camera);
     },
 

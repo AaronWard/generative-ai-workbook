@@ -33,7 +33,7 @@ agents = [
             'z': random.uniform(-10, 20),
         },
     )
-    for i in range(1, 15)  # 5 agents
+    for i in range(1, 5)  # 5 agents
 ]
 
 

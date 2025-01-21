@@ -9,9 +9,17 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
-
-// 1) Import RGBELoader for environment
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+
+// Map agent action to an animation name from your .glb
+const actionToClipName = {
+  "StayStill": "SM_idle",
+  "MoveForward": "SM_slowSwim",
+  "TurnLeft": "SM_fastLeft_swim",
+  "TurnRight": "SM_fastRight_swim",
+  "MoveUp": "SM_fastUp_swim",
+  "MoveDown": "SM_fastDown_swim"
+};
 
 export default defineComponent({
   name: "FishBowl",
@@ -20,8 +28,20 @@ export default defineComponent({
     return {
       seaMonkeyModel: null,
       seaMonkeyAnimations: null,
+
+      // agent_id -> 3D object
       agentMeshMap: {},
-      mixerMap: {}, 
+
+      // agent_id -> AnimationMixer
+      mixerMap: {},
+
+      // agent_id -> currently playing action name
+      actionMap: {},
+
+      // NEW: Track the movement state for each agent so we can do smooth interpolation
+      // agentMovementMap[agent_id] = { startPosition, endPosition, currentTime, duration }
+      agentMovementMap: {},
+
       refreshIntervalId: null,
       animationId: null,
       clock: new THREE.Clock(),
@@ -45,19 +65,17 @@ export default defineComponent({
       })
     );
 
-    // 2) For PBR materials, enable physically correct lighting, tone mapping, etc.
+    // PBR settings
     this.renderer.physicallyCorrectLights = true;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
-
-    // 3) sRGB output encoding so texture colors look correct
-    this.renderer.outputEncoding = THREE.sRGBEncoding; 
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
 
     this.initScene();
-    this.loadEnvironment(); // <-- Load an HDR environment
+    this.loadEnvironment();
     this.loadSeaMonkeyModel()
       .then(() => {
-        console.log("SeaMonkey .glb loaded. Starting animation...");
+        console.log("SeaMonkey .glb loaded. Starting animation loop...");
         this.animate();
         console.log("Starting simulation loop (every 2s)...");
         this.startSimulationLoop();
@@ -91,7 +109,7 @@ export default defineComponent({
       this.controls.minDistance = 10;
       this.controls.maxDistance = 200;
 
-      // Basic lights (still helpful along with environment)
+      // Lights
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
       this.scene.add(ambientLight);
 
@@ -113,19 +131,17 @@ export default defineComponent({
       window.addEventListener("resize", this.onWindowResize);
     },
 
-    // 4) Create a function to load an HDR environment
     loadEnvironment() {
       const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
       pmremGenerator.compileEquirectangularShader();
 
       const rgbeLoader = new RGBELoader();
-      // Provide your own .hdr file in public/envmaps/:
       const hdrPath = import.meta.env.BASE_URL + "envmaps/studio_small_08_hd.hdr";
 
       rgbeLoader.load(hdrPath, (texture) => {
         const envMap = pmremGenerator.fromEquirectangular(texture).texture;
         this.scene.environment = envMap;
-        // Optional: scene.background = envMap;
+        // this.scene.background = envMap; // optional
         texture.dispose();
         pmremGenerator.dispose();
       });
@@ -140,20 +156,15 @@ export default defineComponent({
           modelPath,
           (gltf) => {
             const { scene, animations } = gltf;
-            console.log("3D model loaded:", gltf);
 
-            // If your model is authored with high metalness, you can clamp it down:
+            // Fix up materials
             scene.traverse((child) => {
               if (child.isMesh && child.material) {
-                // Ensure map is in sRGB:
                 if (child.material.map) {
                   child.material.map.encoding = THREE.sRGBEncoding;
                 }
-
-                // If still dark, override metalness or roughness:
                 child.material.metalness = 0;
                 child.material.roughness = 0.5;
-
                 child.material.needsUpdate = true;
               }
             });
@@ -174,9 +185,12 @@ export default defineComponent({
     },
 
     startSimulationLoop() {
+      // Poll the backend every 2 seconds
       this.refreshIntervalId = setInterval(async () => {
         try {
+          // Step 1: trigger a simulation step on the backend
           await axios.post("http://localhost:8000/simulate");
+          // Step 2: get updated agent states
           const res = await axios.get("http://localhost:8000/agents");
           this.updateAgents(res.data);
         } catch (err) {
@@ -186,60 +200,104 @@ export default defineComponent({
     },
 
     updateAgents(agents) {
-      agents.forEach(({ agent_id, position }) => {
+      // For each agent returned by the backend:
+      agents.forEach(({ agent_id, position, action }) => {
+
+        // 1) Create a mesh if none exists yet
         if (!this.agentMeshMap[agent_id]) {
           const clonedMonkey = markRaw(SkeletonUtils.clone(this.seaMonkeyModel));
-
-          // Random initial rotation
+          clonedMonkey.scale.set(300, 300, 300);
           clonedMonkey.rotation.y = Math.random() * 2 * Math.PI;
 
-          // Scale up
-          clonedMonkey.scale.set(300, 300, 300);
-
-          // Add to the scene
           this.scene.add(clonedMonkey);
 
-          // If there are animations, create a mixer:
-          if (this.seaMonkeyAnimations?.length) {
-            const mixer = new THREE.AnimationMixer(clonedMonkey);
-            const clip = this.seaMonkeyAnimations[0];
-            const action = mixer.clipAction(clip);
-            action.play();
-            this.mixerMap[agent_id] = mixer;
-          }
+          // Prep an animation mixer
+          const mixer = new THREE.AnimationMixer(clonedMonkey);
+          this.mixerMap[agent_id] = mixer;
 
           this.agentMeshMap[agent_id] = clonedMonkey;
+          this.actionMap[agent_id] = null;
+
+          // Initialize the movement map so we don't jump on the first update
+          this.agentMovementMap[agent_id] = {
+            startPosition: new THREE.Vector3(position.x, position.y, position.z),
+            endPosition: new THREE.Vector3(position.x, position.y, position.z),
+            currentTime: 0,
+            duration: 2.0, // match your backend refresh interval
+          };
+
+          // Place the object at the initial position
+          clonedMonkey.position.copy(this.agentMovementMap[agent_id].startPosition);
+        } else {
+          // 2) Update the movement map for smooth interpolation
+          const mesh = this.agentMeshMap[agent_id];
+          const movement = this.agentMovementMap[agent_id];
+
+          // The new cycle starts from wherever the mesh currently is
+          movement.startPosition = mesh.position.clone();
+
+          // The new position from the server
+          movement.endPosition.set(position.x, position.y, position.z);
+
+          // Reset the interpolation time
+          movement.currentTime = 0;
+          movement.duration = 2.0; // 2 seconds in between updates
         }
 
-        // Smooth movement with userData.targetPosition
-        const mesh = this.agentMeshMap[agent_id];
-        if (!mesh.userData.targetPosition) {
-          mesh.userData.targetPosition = new THREE.Vector3(
-            position.x,
-            position.y,
-            position.z
-          );
-        } else {
-          mesh.userData.targetPosition.set(position.x, position.y, position.z);
+        // 3) If the agent's action changed, update the animation
+        if (this.actionMap[agent_id] !== action) {
+          this.playAnimation(agent_id, action);
+          this.actionMap[agent_id] = action;
         }
       });
     },
 
+    playAnimation(agent_id, agentAction) {
+      const mixer = this.mixerMap[agent_id];
+      if (!mixer || !this.seaMonkeyAnimations) return;
+
+      const clipName = actionToClipName[agentAction] || "SM_idle";
+      const clip = THREE.AnimationClip.findByName(this.seaMonkeyAnimations, clipName);
+
+      if (!clip) {
+        console.warn(`Could not find animation clip for ${clipName}, defaulting to idle`);
+        return;
+      }
+
+      // Stop all ongoing actions
+      mixer.stopAllAction();
+
+      // Play the new clip
+      const newAction = mixer.clipAction(clip);
+      newAction.reset().play();
+    },
+
     animate() {
       this.animationId = requestAnimationFrame(this.animate);
-
       const delta = this.clock.getDelta();
+
+      // (A) Update all mixers
       Object.keys(this.mixerMap).forEach((id) => {
         this.mixerMap[id].update(delta);
       });
 
-      // Lerp toward target
-      Object.values(this.agentMeshMap).forEach((mesh) => {
-        if (mesh.userData.targetPosition) {
-          mesh.position.lerp(mesh.userData.targetPosition, 0.1);
-        }
+      // (B) Smoothly interpolate positions for each agent
+      Object.keys(this.agentMeshMap).forEach((agent_id) => {
+        const mesh = this.agentMeshMap[agent_id];
+        const movement = this.agentMovementMap[agent_id];
+        if (!movement) return;
+
+        // Increase the elapsed time
+        movement.currentTime += delta;
+
+        // Calculate interpolation factor
+        const t = Math.min(movement.currentTime / movement.duration, 1.0);
+
+        // Lerp from start to end
+        mesh.position.lerpVectors(movement.startPosition, movement.endPosition, t);
       });
 
+      // (C) Update controls and render
       if (this.controls) {
         this.controls.update();
       }

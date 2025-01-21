@@ -1,23 +1,15 @@
-# main.py
-
-import os
 import uvicorn
-from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from agents.agent import Agent
 import random
+from agents.agent import Agent
 from utils.agent_utils import compute_surroundings
-
-# Load environment variables
-load_dotenv(find_dotenv())
 
 app = FastAPI()
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # adjust as needed
+    allow_origins=["http://localhost:5173"],  # or whatever your front-end is
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,32 +25,31 @@ agents = [
             'z': random.uniform(-10, 20),
         },
     )
-    for i in range(1, 5)  # 5 agents
+    for i in range(1, 11)  # Let's do 10 agents
 ]
-
 
 @app.post("/simulate")
 def simulate():
-    # Simulate one time step for each agent
+    # Each agent perceives, then simulates one step
     for agent in agents:
+        # Surroundings can be computed each step, or less frequently
         surroundings = compute_surroundings(agent, agents)
         agent.perceive(surroundings)
-        agent.think()
-        agent.act()
-    return {"status": "Simulation step completed"}
+        agent.simulate_step()
 
+    return {"status": "Simulation step completed"}
 
 @app.get("/agents")
 def get_agents():
-    # Return positions of all agents
+    # Return positions AND current action
     return [
         {
             'agent_id': agent.agent_id,
             'position': agent.position,
+            'action': agent.action,
         }
         for agent in agents
     ]
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

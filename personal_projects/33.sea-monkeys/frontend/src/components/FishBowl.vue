@@ -134,7 +134,7 @@ export default defineComponent({
     loadSeaMonkeyModel() {
       return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
-        const modelPath = import.meta.env.BASE_URL + "models/shadow_leviathan.glb";
+        const modelPath = import.meta.env.BASE_URL + "models/sea_monkey.glb";
 
         loader.load(
           modelPath,
@@ -151,8 +151,8 @@ export default defineComponent({
                 }
 
                 // If still dark, override metalness or roughness:
-                // child.material.metalness = 0;
-                // child.material.roughness = 0.5;
+                child.material.metalness = 0;
+                child.material.roughness = 0.5;
 
                 child.material.needsUpdate = true;
               }
@@ -164,7 +164,7 @@ export default defineComponent({
           },
           (xhr) => {
             const progress = (xhr.loaded / xhr.total) * 100;
-            console.log(`shadow_leviathan.glb loading: ${progress.toFixed(2)}%`);
+            console.log(`sea_monkey.glb loading: ${progress.toFixed(2)}%`);
           },
           (error) => {
             reject(error);
@@ -194,7 +194,7 @@ export default defineComponent({
           clonedMonkey.rotation.y = Math.random() * 2 * Math.PI;
 
           // Scale up
-          clonedMonkey.scale.set(30, 30, 30);
+          clonedMonkey.scale.set(300, 300, 300);
 
           // Add to the scene
           this.scene.add(clonedMonkey);

@@ -14,6 +14,8 @@ __pycache__/
 **/*.wav
 */*.wav
 
+**/._codebase_digest.txt
+
 # Use defined ignores
 learning/flux/flux/
 learning/flux/saved_flux_model/

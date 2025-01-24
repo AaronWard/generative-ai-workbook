@@ -32,8 +32,7 @@ class Agent:
             {
                 "role": "user",
                 "content": f"""
-Your current position is {self.position}.
-Your surroundings are {self.surroundings}.
+ 
 Decide on an action to move within the fishbowl.
 
 Pick one of the following actions:

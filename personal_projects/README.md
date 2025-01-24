@@ -35,3 +35,5 @@ Heres a list of project descriptions. Earlier projects are very elementary examp
 | 29 | **`Txitter Scraper`** | Selenium controlled tweet scraping (no AI component yet) | Selenium, sqlite  | **Unfinished** | - |
 | 30 | **`Youtube Word Search`** | Search Youtube transcripts with similarity search | youtube_transcript_api, OpenAI | - | ![](./30.youtube-search/resources/_img/terminal.png) |
 | 31 | **`TrendTube - `** | Track topic trends for youtube video topics over time, by analyzing transcripts | Vue js, youtube_transcript_api, ControlFlow, Chroma, OpenAI | - | ![](./31.ai-youtube-analysis/trendtube.gif) |
+| 32 | **`BookReader - `** | Interactive audio book with AI generated audio, video etc | Vue js, Elevenlabs, kokory | *Unfinished, will come back to this* | 
+| 33 | **`Digital Sea Monkeys - `** | Autonomous digital sea monkeys within a 3D space | Vue js, three.js, Ollama | *Unfinished, will come back to this* | |

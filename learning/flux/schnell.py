@@ -89,7 +89,7 @@ try:
     ).images[0]
     print('Max mem allocated (GB) while denoising:', torch.cuda.max_memory_allocated() / (1024 ** 3))
 except Exception as e:
-    print(f"An error occurred: {e}")
+    print(f"An error occurred: {e}")q
 finally:
     # Proper cleanup to avoid leaking resources
     del pipe

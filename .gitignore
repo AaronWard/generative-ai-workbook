@@ -28,6 +28,8 @@ learning/WASM/py2wasm/_output/example.wasm
 learning/whisper/test.wav
 
 
+**/*safetensors
+
 **/wandb/
 */wandb/
 

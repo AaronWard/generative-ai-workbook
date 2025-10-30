@@ -2,305 +2,388 @@
 # -*- coding: utf-8 -*-
 
 """
-LM Studio + gpt-oss-20b THINKING + FINAL extractor (robust).
+LM Studio + gpt-oss-20b: deterministic split of THINKING vs FINAL
 
-Order of attempts per prompt:
-  1) /v1/chat/completions with native reasoning enabled:
-       - reads choices[0].message.reasoning (LM Studio 0.3.23+)
-       - or choices[0].message.reasoning_content (older dev builds)
-       - strips <think>...</think> from content if present
-  2) If no reasoning found: force strict JSON with required fields
-       {"thinking": "...", "final": "..."} via response_format:json_schema
-  3) If still missing: fallback to Harmony tags (<|channel|>analysis/final)
+Why this works:
+- gpt-oss-20b does not implement Harmony channels.
+- We enforce structure via protocol, not model magic.
+- Default is TWO-PASS for reliability:
+  * Pass 1: "analysis-only" (no final allowed)
+  * Pass 2: "final-only" (no analysis allowed)
+- Optional --single-call tries JSON mode then fenced fallback.
 
-CLI:
-  python lmstudio_gptoss.py --high "Prove the quadratic formula"
-  python lmstudio_gptoss.py --low "Why did Thomas doubt Jesus?"
+Debugging:
+- Use --debug to print request/response snippets, lengths, and path decisions.
+- We SHOW the exact system & user messages sent (first 600 chars).
+- We fail hard if the model violates constraints (so final stays clean).
 
-Env:
-  LMSTUDIO_URL (default http://127.0.0.1:1234)
+Effort levels:
+- --low    : very brief analysis; deterministic phrasing constraints
+- --medium : moderate analysis; bullet targets
+- --high   : detailed analysis; more steps
+Plus temperature/top_p variations per mode.
+
+Requires LM Studio server:
+  ~/.lmstudio/bin/lms server start --port 1234
 """
 
-import argparse, json, os, re, sys, urllib.request, urllib.error
+import argparse
+import json
+import os
+import sys
+import textwrap
+import time
+from urllib import request, error
 
-LMSTUDIO_URL_DEFAULT = os.environ.get("LMSTUDIO_URL", "http://127.0.0.1:1234")
+DEFAULT_SERVER = os.environ.get("LMSTUDIO_SERVER", "http://127.0.0.1:1234")
+DEFAULT_MODEL  = os.environ.get("LMSTUDIO_MODEL", "openai/gpt-oss-20b")
 
-# -------------------------
-# HTTP helper
-# -------------------------
-def http_post_json(url, payload, timeout=180):
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+# ============ Effort Profiles ============
+EFFORT_PROFILES = {
+    "low": {
+        "temperature": 0.2,
+        "top_p": 0.85,
+        "analysis_instructions": (
+            "Write a VERY BRIEF chain-of-thought (1–3 short sentences). "
+            "Be terse and only cover the key steps. Do not restate the problem. "
+            "ABSOLUTELY DO NOT give the final answer here."
+        ),
+        "final_instructions": (
+            "Give the final answer ONLY, cleanly formatted for a user. "
+            "DO NOT include any chain-of-thought or internal notes."
+        ),
+        "analysis_token_hint": "Target ~60–120 tokens.",
+        "analysis_max_tokens": 180,
+        "final_max_tokens": 600,
+    },
+    "medium": {
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "analysis_instructions": (
+            "Write a concise but complete chain-of-thought (4–8 short bullet points). "
+            "Cover assumptions, key steps, and checks. "
+            "ABSOLUTELY DO NOT give the final answer here."
+        ),
+        "final_instructions": (
+            "Provide the final answer ONLY. "
+            "No chain-of-thought, no meta commentary."
+        ),
+        "analysis_token_hint": "Target ~150–250 tokens.",
+        "analysis_max_tokens": 400,
+        "final_max_tokens": 900,
+    },
+    "high": {
+        "temperature": 0.9,
+        "top_p": 0.95,
+        "analysis_instructions": (
+            "Write a detailed, methodical chain-of-thought (8–15 bullets). "
+            "Include sub-goals, alternatives considered, and correctness checks. "
+            "ABSOLUTELY DO NOT give the final answer here."
+        ),
+        "final_instructions": (
+            "Provide the final answer ONLY, well-structured. "
+            "No chain-of-thought, no internal notes."
+        ),
+        "analysis_token_hint": "Target ~250–500 tokens.",
+        "analysis_max_tokens": 900,
+        "final_max_tokens": 1200,
+    },
+}
+
+def http_post_json(url, payload, timeout=600, debug=False):
+    data = json.dumps(payload).encode("utf-8")
+    req = request.Request(url, data=data, headers={"Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read().decode("utf-8", "replace")
-            return json.loads(raw), raw, None
-    except urllib.error.HTTPError as e:
-        raw = e.read().decode("utf-8", "replace")
-        return None, raw, f"HTTP {e.code}"
+        with request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read()
+    except error.HTTPError as e:
+        raise RuntimeError(f"HTTP {e.code}: {e.read().decode('utf-8', 'ignore')}")
     except Exception as e:
-        return None, None, f"{type(e).__name__}: {e}"
+        raise RuntimeError(str(e))
+    txt = raw.decode("utf-8", "replace")
+    if debug:
+        print("[debug] raw JSON (first 600 chars):")
+        print(txt[:600])
+    return json.loads(txt)
 
-# -------------------------
-# Reasoning extraction (chat)
-# -------------------------
-THINK_TAG_RE = re.compile(r"<think>(.*?)</think>", re.DOTALL | re.IGNORECASE)
+def build_system_prompt(effort_key):
+    prof = EFFORT_PROFILES[effort_key]
+    # This is a strict meta-instruction block we found to be effective on non-reasoning models.
+    sys_prompt = f"""\
+You are a careful, non-deceptive assistant.
 
-def extract_reasoning_from_message(msg):
-    # Preferred (LM Studio 0.3.23+)
-    val = msg.get("reasoning")
-    if isinstance(val, str) and val.strip():
-        return val.strip(), "message.reasoning"
+Your job will be split into two distinct phases:
+1) ANALYSIS: You will think step-by-step to solve the problem. {prof['analysis_instructions']} {prof['analysis_token_hint']}
+2) FINAL: You will output ONLY the user-facing answer, free of chain-of-thought.
 
-    # Older dev toggle / variants
-    val = msg.get("reasoning_content")
-    if isinstance(val, str) and val.strip():
-        return val.strip(), "message.reasoning_content"
+CRITICAL RULES:
+- When asked for ANALYSIS ONLY, DO NOT include any final results.
+- When asked for FINAL ONLY, DO NOT include any chain-of-thought, hints, or meta-notes.
+- Never mix ANALYSIS and FINAL in the same response unless explicitly asked, which will not happen here.
+- Avoid prefacing with 'We need to...' or similar meta text in FINAL.
+"""
+    return textwrap.dedent(sys_prompt).strip()
 
-    # Embedded tags (last resort within this call)
-    content = (msg.get("content") or "")
-    m = THINK_TAG_RE.search(content)
-    if m:
-        return m.group(1).strip(), "content.<think>"
-    return None, None
+def call_chat(server, model, messages, temperature, top_p, max_tokens, debug=False, response_format=None, stop=None):
+    url = f"{server.rstrip('/')}/v1/chat/completions"
+    body = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_tokens": max_tokens,
+        "stream": False,
+    }
+    if response_format:
+        body["response_format"] = response_format
+    if stop:
+        body["stop"] = stop
+    if debug:
+        print("[debug] chat POST ->", url)
+        print("[debug] messages (first 600 chars):")
+        preview = json.dumps(messages, ensure_ascii=False)[:600]
+        print(preview)
+    return http_post_json(url, body, debug=debug)
 
-def strip_think_tags(text):
-    return THINK_TAG_RE.sub("", text).strip()
+def extract_assistant_text_chat(resp):
+    choices = resp.get("choices") or []
+    if not choices:
+        return ""
+    msg = choices[0].get("message") or {}
+    return msg.get("content") or ""
 
-# -------------------------
-# Harmony parsing fallback
-# -------------------------
-def parse_harmony_text(text):
-    analysis = None
-    final = None
+def norm(s):
+    return (s or "").strip()
 
-    m_a = re.search(r"<\|channel\|>analysis<\|message\|>(.*?)(?:<\|end\|>|<\|channel\|>final)", text, flags=re.DOTALL)
-    if m_a:
-        analysis = m_a.group(1).strip()
-    m_f = re.search(r"<\|channel\|>final<\|message\|>(.*)", text, flags=re.DOTALL)
-    if m_f:
-        final = m_f.group(1).strip()
+def two_pass_protocol(server, model, prompt, effort_key, debug=False, analysis_max_tokens=None, final_max_tokens=None):
+    prof = EFFORT_PROFILES[effort_key]
+    system = build_system_prompt(effort_key)
+    a_max = analysis_max_tokens or prof["analysis_max_tokens"]
+    f_max = final_max_tokens or prof["final_max_tokens"]
 
-    if analysis is None:
-        m = re.search(r"<\|analysis\|>(.*?)(?:<\|final\|>|$)", text, flags=re.DOTALL)
-        if m:
-            analysis = m.group(1).strip()
-    if final is None:
-        m = re.search(r"<\|final\|>(.*)", text, flags=re.DOTALL)
-        if m:
-            final = m.group(1).strip()
+    # ------------------ PASS 1: Analysis only ------------------
+    messages_analysis = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": (
+            "PHASE: ANALYSIS ONLY.\n"
+            "Task:\n"
+            f"{prompt}\n\n"
+            "Output requirements:\n"
+            "- Return ONLY your hidden chain-of-thought (no final answer).\n"
+            "- Start with the line: <analysis>\n"
+            "- End with the line: </analysis>\n"
+            "- Do not include any other tags like <final>.\n"
+        )},
+    ]
+    resp1 = call_chat(
+        server, model, messages_analysis,
+        temperature=prof["temperature"],
+        top_p=prof["top_p"],
+        # max_tokens=max_tokens,
+        max_tokens=a_max,
+        debug=debug,
+        stop=["</analysis>"]  # helps truncate right after closing tag
+    )
+    analysis_raw = extract_assistant_text_chat(resp1)
+    if debug:
+        print("[debug] PASS1 raw (first 400 chars):", analysis_raw[:400])
 
-    if final is None and not re.search(r"<\|.*?\|>", text):
-        final = text.strip()
+    # Extract between <analysis> ... </analysis>
+    analysis = ""
+    if "<analysis>" in analysis_raw:
+        # If stop cut the closing tag, we still accept up to the stop.
+        chunk = analysis_raw.split("<analysis>", 1)[1]
+        if "</analysis>" in chunk:
+            analysis = chunk.split("</analysis>", 1)[0]
+        else:
+            # If server stopped at stop token, the tag is omitted; just use chunk
+            analysis = chunk
+    else:
+        # Hard fail: we don't want to leak anything if we can't reliably split
+        raise ValueError("PASS1: Missing <analysis> block. Refusing to continue to keep FINAL clean.")
+
+    analysis = analysis.strip()
+    if not analysis:
+        raise ValueError("PASS1: Empty analysis block produced. Cannot proceed safely.")
+
+    # ------------------ PASS 2: Final only ------------------
+    messages_final = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": (
+            "PHASE: FINAL ONLY.\n"
+            "Use your earlier internal reasoning (not shown here) to produce ONLY the final user-facing answer.\n"
+            "Task:\n"
+            f"{prompt}\n\n"
+            "Output requirements:\n"
+            "- Return ONLY the final answer, with no chain-of-thought.\n"
+            "- Start with the line: <final>\n"
+            "- End with the line: </final>\n"
+            "- Do not include any other tags like <analysis>.\n"
+        )},
+    ]
+    resp2 = call_chat(
+        server, model, messages_final,
+        temperature=prof["temperature"],
+        top_p=prof["top_p"],
+        # max_tokens=max_tokens,
+        max_tokens=f_max,
+        debug=debug,
+        stop=["</final>"]
+    )
+    final_raw = extract_assistant_text_chat(resp2)
+    if debug:
+        print("[debug] PASS2 raw (first 400 chars):", final_raw[:400])
+
+    if "<final>" not in final_raw:
+        raise ValueError("PASS2: Missing <final> block. Refusing to print analysis to keep FINAL clean.")
+
+    final_chunk = final_raw.split("<final>", 1)[1]
+    if "</final>" in final_chunk:
+        final = final_chunk.split("</final>", 1)[0].strip()
+    else:
+        final = final_chunk.strip()
+
+    if not final:
+        raise ValueError("PASS2: Empty final block. Refusing to print analysis to keep FINAL clean.")
 
     return analysis, final
 
-# -------------------------
-# Effort controls
-# -------------------------
-def token_budget_for_effort(effort):
-    return {"low": 1024, "medium": 2048, "high": 4096}.get(effort, 2048)
+def single_call_json_protocol(server, model, prompt, effort_key, debug=False, max_tokens=2048):
+    """
+    Try OpenAI-style JSON mode with a strict schema.
+    If JSON mode not honored, fall back to fenced blocks.
+    """
+    prof = EFFORT_PROFILES[effort_key]
+    system = build_system_prompt(effort_key)
 
-def effort_value(effort):
-    # Use OpenAI-style field recognized by some LM Studio builds.
-    return effort if effort in ("low","medium","high") else "medium"
-
-# -------------------------
-# Call 1: chat.completions asking for native reasoning
-# -------------------------
-def call_chat_with_reasoning(server, model, effort, user_text, temperature, max_tokens, debug=False):
-    payload = {
-        "model": model,
-        "messages": [
-            {"role":"system","content":"Return the user-facing answer in content. Also include hidden reasoning if supported."},
-            {"role":"user","content": user_text.strip()}
-        ],
-        "temperature": temperature,
-        "top_p": 1.0,
-        "max_tokens": max_tokens,
-
-        # Ask for reasoning the way OpenAI reasoning models expect.
-        "reasoning": {"effort": effort_value(effort)},
-
-        # Hints some forks honor:
-        "include_reasoning": True,
-        "return_reasoning": True
-    }
-    url = f"{server.rstrip('/')}/v1/chat/completions"
-    resp, raw, err = http_post_json(url, payload)
-    if debug:
-        sys.stderr.write(f"[debug] chat.completions err={err}\n")
-        if raw: sys.stderr.write(f"[debug] raw(first 800): {raw[:800]}\n")
-
-    if not resp or "choices" not in resp or not resp["choices"]:
-        return None, None, {"path":"chat","reason":f"no choices ({err})"}
-
-    msg = (resp["choices"][0].get("message") or {})
-    reasoning, src = extract_reasoning_from_message(msg)
-    final = strip_think_tags(msg.get("content") or "")
-
-    meta = {"path":"chat","reason":src or "(no reasoning field)"}
-    return reasoning, final, meta
-
-# -------------------------
-# Call 2: force strict JSON with required fields
-# -------------------------
-def call_chat_force_json(server, model, effort, user_text, temperature, max_tokens, debug=False):
-    sys_msg = (
-        "You must output ONLY a valid JSON object matching this exact schema. "
-        "Schema: {\"thinking\":\"string\",\"final\":\"string\"}. "
-        "Both fields are REQUIRED. Do NOT include any extra keys, text, or formatting."
+    schema_sys = (
+        "You MUST return a strict JSON object with exactly two string fields:\n"
+        '{ "analysis": string, "final": string }\n'
+        "- Put ALL chain-of-thought ONLY in analysis.\n"
+        "- Put ONLY the user-facing answer in final (NO chain-of-thought).\n"
+        "- No extra keys, no preface, no markdown, just raw JSON."
     )
-    payload = {
-        "model": model,
-        "temperature": temperature,
-        "top_p": 1.0,
-        "max_tokens": max_tokens,
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "ThinkingFinal",
-                "strict": True,
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "thinking": {"type":"string"},
-                        "final":    {"type":"string"}
-                    },
-                    "required": ["thinking","final"],
-                    "additionalProperties": False
-                }
-            }
-        },
-        "messages": [
-            {"role":"system","content": sys_msg},
-            {"role":"user","content": user_text.strip()}
-        ]
-    }
-    url = f"{server.rstrip('/')}/v1/chat/completions"
-    resp, raw, err = http_post_json(url, payload)
-    if debug:
-        sys.stderr.write(f"[debug] chat.force-json err={err}\n")
-        if raw: sys.stderr.write(f"[debug] raw(first 800): {raw[:800]}\n")
 
-    if not resp or "choices" not in resp or not resp["choices"]:
-        return None, None, {"path":"json","reason":f"no choices ({err})"}
+    messages = [
+        {"role": "system", "content": system + "\n\n" + schema_sys},
+        {"role": "user", "content": f"Task:\n{prompt}\nReturn the JSON now."},
+    ]
 
-    content = (resp["choices"][0].get("message") or {}).get("content") or ""
+    # JSON mode first
     try:
-        obj = json.loads(content)
-        thinking = (obj.get("thinking") or "").strip()
-        final = (obj.get("final") or "").strip()
-        if thinking and final:
-            return thinking, final, {"path":"json","reason":"schema"}
-    except Exception:
-        pass
-    return None, None, {"path":"json","reason":"parse-failed"}
+        resp = call_chat(
+            server, model, messages,
+            temperature=prof["temperature"],
+            top_p=prof["top_p"],
+            max_tokens=max_tokens,
+            debug=debug,
+            response_format={"type": "json_object"},
+        )
+        text = extract_assistant_text_chat(resp)
+        if debug:
+            print("[debug] JSON mode raw (first 400 chars):", text[:400])
+        obj = json.loads(text)
+        analysis = norm(obj.get("analysis"))
+        final    = norm(obj.get("final"))
+        if not analysis or not final:
+            raise ValueError("JSON missing 'analysis' or 'final'")
+        return analysis, final
+    except Exception as e:
+        if debug:
+            print("[debug] JSON mode failed:", str(e))
 
-# -------------------------
-# Call 3: Harmony fallback
-# -------------------------
-HARMONY_SEED = """<|start|>system<|message|>
-{system}
-<|end|><|start|>user<|message|>
-{user}
-<|end|><|start|>assistant<|channel|>analysis<|message|>
-"""
-
-def call_harmony(server, model, effort, user_text, temperature, max_tokens, debug=False):
-    system = f"Reasoning effort: {effort}. Use Harmony channels. Provide analysis in <|channel|>analysis and the user-facing answer in <|channel|>final."
-    prompt = HARMONY_SEED.format(system=system, user=user_text.strip())
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "temperature": temperature,
-        "top_p": 1.0,
-        "max_tokens": max_tokens
-    }
-    url = f"{server.rstrip('/')}/v1/completions"
-    resp, raw, err = http_post_json(url, payload)
+    # Fenced fallback (still single call)
+    messages2 = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": (
+            f"Task:\n{prompt}\n\n"
+            "Return exactly two fenced blocks:\n"
+            "```thinking\n"
+            "(your chain-of-thought here; no final answer)\n"
+            "```\n"
+            "```final\n"
+            "(your final answer for the user; no chain-of-thought)\n"
+            "```\n"
+            "No other text."
+        )},
+    ]
+    resp2 = call_chat(
+        server, model, messages2,
+        temperature=prof["temperature"],
+        top_p=prof["top_p"],
+        max_tokens=max_tokens,
+        debug=debug,
+    )
+    txt = extract_assistant_text_chat(resp2)
     if debug:
-        sys.stderr.write(f"[debug] completions(Harmony) err={err}\n")
-        if raw: sys.stderr.write(f"[debug] raw(first 800): {raw[:800]}\n")
+        print("[debug] fenced raw (first 400 chars):", txt[:400])
 
-    if not resp or "choices" not in resp or not resp["choices"]:
-        return None, None, {"path":"harmony","reason":f"no choices ({err})"}
+    def between(hay, start, end):
+        if start not in hay or end not in hay:
+            return ""
+        return hay.split(start, 1)[1].split(end, 1)[0].strip()
 
-    text = (resp["choices"][0].get("text") or "").strip()
-    a, f = parse_harmony_text(text)
-    return a, f, {"path":"harmony","reason":"parsed-tags"}
+    analysis = between(txt, "```thinking", "```")
+    final    = between(txt, "```final", "```")
 
-# -------------------------
-# CLI
-# -------------------------
+    if not analysis or not final:
+        raise ValueError("Single-call fallback failed to extract fenced blocks. Use --two-pass (default).")
+
+    return analysis, final
+
 def main():
-    p = argparse.ArgumentParser(description="LM Studio + gpt-oss-20b: print THINKING + FINAL cleanly.")
-    p.add_argument("question", help="User prompt")
-    p.add_argument("--server", default=LMSTUDIO_URL_DEFAULT, help="LM Studio base URL (default http://127.0.0.1:1234)")
-    p.add_argument("--model", default="openai/gpt-oss-20b")
-    g = p.add_mutually_exclusive_group()
-    g.add_argument("--low", action="store_true")
-    g.add_argument("--medium", action="store_true")
-    g.add_argument("--high", action="store_true")
-    p.add_argument("--temp", type=float, default=0.2)
-    p.add_argument("--max-tokens", type=int, default=None)
-    p.add_argument("--chat-only", action="store_true", help="Skip Harmony fallback")
-    p.add_argument("--harmony-only", action="store_true", help="Force Harmony only")
-    p.add_argument("--debug", action="store_true")
-    args = p.parse_args()
+    ap = argparse.ArgumentParser(description="LM Studio gpt-oss-20b with clean THINKING vs FINAL separation.")
+    ap.add_argument("prompt", help="User task/question")
+    ap.add_argument("--server", default=DEFAULT_SERVER)
+    ap.add_argument("--model", default=DEFAULT_MODEL)
+    ap.add_argument("--low", action="store_true", help="Low effort reasoning")
+    ap.add_argument("--medium", action="store_true", help="Medium effort reasoning")
+    ap.add_argument("--high", action="store_true", help="High effort reasoning")
+    ap.add_argument("--single-call", action="store_true", help="Try single-call JSON/fenced protocol instead of 2-pass")
+    # ap.add_argument("--max-tokens", type=int, default=2048)
+    ap.add_argument("--debug", action="store_true")
+    ap.add_argument("--max-tokens", type=int, default=None, help="(deprecated) Use --max-analysis-tokens / --max-final-tokens instead.")
+    ap.add_argument("--max-analysis-tokens", type=int, default=None)
+    ap.add_argument("--max-final-tokens", type=int, default=None)
+    args = ap.parse_args()
 
-    effort = "medium"
-    if args.low: effort = "low"
-    if args.high: effort = "high"
-
-    max_tokens = args.max_tokens or token_budget_for_effort(effort)
-
-    analysis = None
-    final = None
-    meta = {"path":"", "reason":""}
-
-    # 1) Native reasoning via chat.completions
-    if not args.harmony_only:
-        a1, f1, m1 = call_chat_with_reasoning(args.server, args.model, effort, args.question, args.temp, max_tokens, args.debug)
-        analysis = a1
-        final = f1
-        meta = m1
-
-        # 2) If no reasoning, force JSON with required fields
-        if (not analysis) or (not final):
-            a2, f2, m2 = call_chat_force_json(args.server, args.model, effort, args.question, args.temp, max_tokens, args.debug)
-            if a2 and not analysis:
-                analysis = a2
-                meta = m2
-            if f2 and not final:
-                final = f2
-                meta = m2
-
-    # 3) Harmony fallback if still missing and allowed
-    if ((not analysis) or (not final)) and not args.chat_only:
-        a3, f3, m3 = call_harmony(args.server, args.model, effort, args.question, args.temp, max_tokens, args.debug)
-        if a3 and not analysis:
-            analysis = a3
-            meta = m3
-        if f3 and not final:
-            final = f3
-            meta = m3
-
-    # ---- Print both parts ----
-    print("=== THINKING (hidden) ===")
-    if analysis and analysis.strip():
-        print(analysis.strip(), end="\n\n")
+    # Decide effort
+    if args.high:
+        effort = "high"
+    elif args.medium:
+        effort = "medium"
+    elif args.low:
+        effort = "low"
     else:
-        print("(no reasoning returned by server)\n")
-
-    print("=== FINAL ANSWER ===")
-    if final and final.strip():
-        print(final.strip())
-    else:
-        print("(no final answer returned)")
+        effort = "low"  # sensible default
 
     if args.debug:
-        sys.stderr.write(f"[debug] used path: {meta.get('path','?')}  source: {meta.get('reason','?')}\n")
+        print(f"[debug] effort={effort} max_tokens={args.max_tokens} server={args.server} model={args.model}")
+
+    try:
+        if args.single_call:
+            analysis, final = single_call_json_protocol(
+                args.server, args.model, args.prompt, effort, debug=args.debug, max_tokens=args.max_tokens
+            )
+            used_path = "single-call"
+        else:
+            analysis, final = two_pass_protocol(
+                args.server, args.model, args.prompt, effort, debug=args.debug,
+                analysis_max_tokens=args.max_analysis_tokens,
+                final_max_tokens=args.max_final_tokens
+            )
+            used_path = "two-pass"
+    except Exception as e:
+        print(f"[error] {e}", file=sys.stderr)
+        sys.exit(2)
+
+    # Present like LM Studio: hidden thinking, clean final
+    print("=== THINKING (hidden) ===")
+    print(analysis.strip() if analysis else "(no reasoning returned)")
+    print("\n=== FINAL ANSWER ===")
+    print(final.strip() if final else "(no final answer returned)")
+    if args.debug:
+        print(f"[debug] used path: {used_path}")
 
 if __name__ == "__main__":
     main()

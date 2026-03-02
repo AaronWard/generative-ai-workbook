@@ -1,0 +1,47 @@
+{
+  "15": {
+    "inputs": {
+      "audio": "npc1.mp3",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudio"
+    }
+  },
+  "16": {
+    "inputs": {
+      "audioUI": "",
+      "audio": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "PreviewAudio",
+    "_meta": {
+      "title": "PreviewAudio"
+    }
+  },
+  "37": {
+    "inputs": {
+      "text": "Hello, this is a test of the VibeVoice text-to-speech system.",
+      "model": "VibeVoice-Large",
+      "attention_type": "auto",
+      "free_memory_after_generate": true,
+      "diffusion_steps": 20,
+      "seed": 42,
+      "cfg_scale": 1.6,
+      "use_sampling": false,
+      "temperature": 0.95,
+      "top_p": 0.95,
+      "voice_to_clone": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "VibeVoiceSingleSpeakerNode",
+    "_meta": {
+      "title": "VibeVoice: Single Speaker"
+    }
+  }
+}

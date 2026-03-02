@@ -1,5 +1,8 @@
 ## 33. Sea Moneksy
 
+
+![](./monkey.png)
+
 I want make a 3D game, with autonomous agents that walk around and interact with eachother. 
 The sea monkeys can swim around in 3D space. Their actions are decided by LLM - which acts a low dimensional mind. 
 

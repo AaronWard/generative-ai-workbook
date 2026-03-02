@@ -36,4 +36,6 @@ Heres a list of project descriptions. Earlier projects are very elementary examp
 | 30 | **`Youtube Word Search`** | Search Youtube transcripts with similarity search | youtube_transcript_api, OpenAI | - | ![](./30.youtube-search/resources/_img/terminal.png) |
 | 31 | **`TrendTube - `** | Track topic trends for youtube video topics over time, by analyzing transcripts | Vue js, youtube_transcript_api, ControlFlow, Chroma, OpenAI | - | ![](./31.ai-youtube-analysis/trendtube.gif) |
 | 32 | **`BookReader - `** | Interactive audio book with AI generated audio, video etc | Vue js, Elevenlabs, kokory | *Unfinished, will come back to this* | 
-| 33 | **`Digital Sea Monkeys - `** | Autonomous digital sea monkeys within a 3D space | Vue js, three.js, Ollama | *Unfinished, will come back to this* | |
+| 33 | **`Digital Sea Monkeys `** | Autonomous digital sea monkeys within a 3D space driven by LLMs | Vue js, three.js, Ollama | *Unfinished, will come back to this* | ![](./33.sea-monkeys/monkey.png) |
+| 34 | **`Local Deep Researcher`** | Using gpt-oss-20B locally to recreate open_deep_research | lm-studio, openai,  | Harmony model structure is explored in this | |
+| 35 | **`Dynamic Voices`** | Emotion driven voice responses using structured LLM output | OpenAI, vibevoice, comfyui |  | |

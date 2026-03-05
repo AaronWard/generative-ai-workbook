@@ -35,6 +35,22 @@ claude
   Welcome to Opus 4.6  
 ```
 
+Here are the essential commands:
+- https://code.claude.com/docs/en/cli-reference
+
+| Command                     | What it does                                   | Example                               |
+|-----------------------------|------------------------------------------------|---------------------------------------|
+| `claude`                    | Start interactive mode                         | `claude`                              |
+| `claude "task"`             | Run a one-time task                            | `claude "fix the build error"`        |
+| `claude -p "query"`         | Run one-off query, then exit                   | `claude -p "explain this function"`   |
+| `claude -c`                 | Continue most recent conversation in current directory | `claude -c`                     |
+| `claude -r`                 | Resume a previous conversation                 | `claude -r`                           |
+| `claude commit`             | Create a Git commit                            | `claude commit`                       |
+| `/clear`                    | Clear conversation history                     | `/clear`                              |
+| `/help`                     | Show available commands                        | `/help`                               |
+| `exit` or `Ctrl+C`          | Exit Claude Code                               | `exit`                                |
+
+
 ---
 
 ## 3. Example Command
@@ -97,9 +113,14 @@ When explaining the model performance, always include:
 3. Potential TODO's for future improvements
 ```
 
-run the skill
+run the skill:
 ```py
 /commit-model-card
 ```
 
 ![](./_img/commit.png)
+
+
+---
+
+##

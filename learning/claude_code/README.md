@@ -41,6 +41,12 @@ claude
 
 > make a simple PU Learning classifier model, use python, download a small example dataset and place the data in a `data` folder.           
 
+Made the following:
+- `pu_visualize.py`
+- `pu_learning.py`
+- `./data/breast_cancer.csv`
+- `./data/pu_result.png`
+
 result:
 
 ```
@@ -96,4 +102,4 @@ run the skill
 /commit-model-card
 ```
 
-![](./data/commit.png)
+![](./_img/commit.png)

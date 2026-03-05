@@ -6,6 +6,7 @@
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
+---
 
 ## 2. Run (in terminal)
 
@@ -27,12 +28,14 @@ claude
 │                      ▝▜█████▛▘                     │                                                                   │
 │                        ▘▘ ▝▝                       │                                                                   │
 │       Sonnet 4.6 · Claude Pro ·                    │                                                                   │
-│       aaronward6210@gmail.com's Organization       │                                                                   │
+│       ******'s Organization       │                                                                   │
 │   ~/…/generative-ai-workbook/learning/claude_code  │                                                                   │
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                                           
   Welcome to Opus 4.6  
 ```
+
+---
 
 ## 3. Example Command
 
@@ -58,11 +61,14 @@ result:
 
 ![](./data/pu_results.png)
 
+---
 
 ## 4. Make a `claude.md` file
 
-> CLAUDE.md is a markdown file you add to your project root that Claude Code reads at the start of every session. Use it to set coding standards, architecture decisions, preferred libraries, and review checklists. 
+> [CLAUDE.md](CLAUDE.md) is a markdown file you add to your project root that Claude Code reads at the start of every session. Use it to set coding standards, architecture decisions, preferred libraries, and review checklists. 
 
+
+---
 
 ## 5. Make a skill
 
@@ -72,7 +78,7 @@ mkdir -p ~/.claude/skills/commit-model-card
 mkdir -p ~/.claude/skills/commit-model-card/prompt.md
 ```
 
-```md
+```markdown
 ---
 name: commit-model-card
 description: Make a git commit with a meaningful commit message which acts as a model card. 
@@ -84,3 +90,10 @@ When explaining the model performance, always include:
 2. A small table with metrics
 3. Potential TODO's for future improvements
 ```
+
+run the skill
+```py
+/commit-model-card
+```
+
+![](./data/commit.png)
